@@ -1,23 +1,77 @@
-# Quotex Advanced Signal Bot 🚀
+📊 Quotex Advanced Signal Bot
 
-A professional Telegram Signal Bot for Quotex Trading.
+A fully professional Telegram bot for Quotex trading signals with:
 
-**Developed for:** Ankit Singh
+✅ Real + OTC market pairs
 
-## ✅ Features
-- Real + OTC market pairs
-- RSI, MACD, Volume analysis
-- Pattern recognition
-- Trade result after 5 min (Manual entry for now)
-- Daily & Monthly stats with colorful bar charts
-- Performance review: Good / Average / Bad
-- Personalized charts with **Ankit Singh** branding
-- Telegram Bot with Menu buttons
+✅ Support & Resistance, RSI, MACD, Volume analysis
 
-## 📌 Installation (Local)
+✅ Personalized stats with professional charts
 
-```bash
-git clone https://github.com/ankitkkit01/quotex-advanced-signal-bot.git
-cd quotex-advanced-signal-bot
-pip install -r requirements.txt
-python main.py
+✅ Daily & Monthly performance review
+
+✅ Full Telegram menu integration
+
+✅ Render.com + GitHub Deployment Ready
+
+
+🚀 Features
+
+Random and custom signal generation
+
+Trade result tracking with 5-minute delay
+
+Professional signal formatting (Tanishk AI style)
+
+Automated bar chart generation with GOOD/AVERAGE/BAD performance tags
+
+Personalized reports with your name "Ankit Singh"
+
+
+📂 Project Structure
+
+quotex-advanced-signal-bot/
+├── main.py
+├── config.py
+├── requirements.txt
+├── render.yaml
+├── README.md
+├── utils/
+│   ├── analysis.py
+│   └── charts.py
+└── assets/
+
+⚙️ Deployment Instructions
+
+1. Fork this repo or clone locally.
+
+
+2. Connect to Render.com → New Web Service → Connect GitHub Repo.
+
+
+3. Ensure Environment Variable:
+
+PYTHON_VERSION=3.10.13
+
+
+
+4. Deploy → Start using commands on Telegram:
+
+/start → Start the bot
+
+/signal → Get new trading signal
+
+/stats → View performance chart
+
+
+
+
+🏆 Credits
+
+Customized & Managed for: Ankit Singh
+Professional Style Reference: Tanishk AI
+
+📧 Contact
+
+For customization & support → Managed privately for Ankit Singh
+
