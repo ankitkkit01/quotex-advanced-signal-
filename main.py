@@ -1,6 +1,12 @@
-import logging imimport logging import random from collections import defaultdict, deque from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup import pandas as pd import numpy as np import matplotlib.pyplot as plt from analysis.analysis import analyze_pair
-import logging imimport logging import random from collections import defaultdict, deque from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup import pandas as pd import numpy as np import matplotlib.pyplot as plt from analysis.analysis import analyze_pair
-
+import logging
+import random
+from collections import defaultdict, deque
+from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from analysis.analysis import analyze_pair
 -----------------------------------------
 
 TOKEN = '7413469925:AAHd7Hi2g3609KoT15MSdrJSeqF1-YlCC54' MY_CHAT_ID = 6065493589
