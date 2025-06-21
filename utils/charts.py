@@ -1,22 +1,43 @@
-import matplotlib.pyplot as plt
-import numpy as np
-import os
-import random
+import matplotlib.pyplot as plt import random import os from datetime import datetime
 
-def generate_statistics_chart():
-    labels = ['Wins', 'Losses']
-    values = [random.randint(20, 30), random.randint(5, 15)]
-    colors = ['green', 'red']
+def generate_statistics_chart(): # Example stats (you can connect this to real data later) wins = random.randint(20, 50) losses = random.randint(5, 15) total = wins + losses accuracy = round((wins / total) * 100, 2)
 
-    fig, ax = plt.subplots(figsize=(6, 4))
-    ax.bar(labels, values, color=colors)
-    ax.set_title('Ankit Singh - Trading Performance')
-    ax.set_ylabel('Number of Trades')
-    for i, v in enumerate(values):
-        ax.text(i, v + 0.5, str(v), ha='center', fontweight='bold')
+status = "✅ GOOD PERFORMANCE" if accuracy >= 75 else ("⚠️ AVERAGE PERFORMANCE" if accuracy >= 50 else "❌ BAD PERFORMANCE")
 
-    chart_path = 'assets/performance_chart.png'
-    os.makedirs(os.path.dirname(chart_path), exist_ok=True)
-    plt.savefig(chart_path)
-    plt.close()
-    return chart_path
+# Bar Chart Generation
+labels = ['Wins', 'Losses']
+values = [wins, losses]
+colors = ['green', 'red']
+
+fig, ax = plt.subplots()
+bars = ax.bar(labels, values, color=colors)
+
+for bar in bars:
+    height = bar.get_height()
+    ax.annotate(f'{height}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                xytext=(0, 3), textcoords="offset points",
+                ha='center', va='bottom', fontsize=12, color='black')
+
+ax.set_title('Daily Trading Performance', fontsize=14)
+ax.set_ylabel('Number of Trades')
+plt.tight_layout()
+
+# Save to assets/
+os.makedirs('assets', exist_ok=True)
+filename = f"assets/performance_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+plt.savefig(filename)
+plt.close()
+
+# Caption for Telegram
+caption = (
+    f"📊 *Performance Review — Ankit Singh*\n"
+    f"━━━━━━━━━━━━━━━\n"
+    f"🏆 Wins: {wins}\n"
+    f"❌ Losses: {losses}\n"
+    f"🎯 Accuracy: {accuracy}%\n"
+    f"━━━━━━━━━━━━━━━\n"
+    f"Status: {status}"
+)
+
+return filename, caption
+
