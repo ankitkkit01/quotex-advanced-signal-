@@ -26,6 +26,8 @@ def start(update: Update, context: CallbackContext):
     update.message.reply_text("👋 Welcome to *Quotex Advanced Bot*!", parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(buttons))
 
 # ✅ Generate Signal Function
+from utils.time_utils import get_next_minute_entry_time
+
 def generate_signal():
     pair = random.choice(get_best_pairs(all_pairs))
     result = analyze_pair(pair, None)
@@ -34,7 +36,7 @@ def generate_signal():
 
 📌 *Asset:* {result['pair']}
 🕐 *Timeframe:* 1 Minute
-⏰ *Entry Time:* {result['entry_time']}
+⏰ *Entry Time:* {get_next_minute_entry_time()}
 📉 *Direction:* {'⬆️ UP' if result['signal'] == 'UP' else '⬇️ DOWN'}
 🌐 *Trend:* {result['trend']}
 📊 *Forecast Accuracy:* {result['accuracy']}%
