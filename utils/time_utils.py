@@ -1,18 +1,15 @@
+# utils/time_utils.py
+
 from datetime import datetime, timedelta
+import pytz
 
-def get_entry_time(offset_minutes=1):
-    """
-    Returns the entry time in IST (UTC+5:30) in HH:MM format.
-    
-    :param offset_minutes: How many minutes ahead from the current time you want
-    """
-    ist_time = datetime.utcnow() + timedelta(hours=5, minutes=30)
-    entry_time = ist_time + timedelta(minutes=offset_minutes)
-    return entry_time.strftime('%H:%M')
+# Function to get India Standard Time
+def get_india_time():
+    utc_now = datetime.utcnow()
+    india_time = utc_now + timedelta(hours=5, minutes=30)
+    return india_time
 
-def get_current_ist_time():
-    """
-    Returns the current IST time in HH:MM format.
-    """
-    ist_time = datetime.utcnow() + timedelta(hours=5, minutes=30)
-    return ist_time.strftime('%H:%M')
+# Function to check if current time is exactly at specific second
+def is_exact_time():
+    india_time = get_india_time()
+    return india_time.second in [0, 10, 20, 30, 40, 50]
