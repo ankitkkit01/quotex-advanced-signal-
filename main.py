@@ -1,4 +1,4 @@
-import logging, random, datetime
+import logging, random, datetime, threading
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, JobQueue
 
@@ -7,12 +7,12 @@ from utils.ai_learning import get_best_pairs
 from utils.time_utils import is_exact_time
 from analysis.analysis import analyze_pair
 from reports.report_generator import generate_performance_chart
+from utils.result_handler import report_trade_result  # ✅ Result reporting import
 
 TOKEN = '7413469925:AAHd7Hi2g3609KoT15MSdrJSeqF1-YlCC54'
 CHAT_ID = 6065493589
 
 logging.basicConfig(level=logging.INFO)
-
 auto_signal_job = None
 
 # ✅ Start Menu
@@ -46,7 +46,22 @@ def generate_signal():
 ⏳ _Always Select 1 Minute Time Frame._
 """
 
-# ✅ Auto Signal Handling
+# ✅ Auto Signal Handling WITH Result Reporting
+def send_auto_signal(context: CallbackContext):
+    signal_text = generate_signal()
+    context.bot.send_message(chat_id=CHAT_ID, text=signal_text, parse_mode='Markdown')
+
+    # Extract pair & direction for result reporting
+    lines = signal_text.splitlines()
+    asset_line = next((line for line in lines if "*Asset:*" in line), "")
+    direction_line = next((line for line in lines if "*Direction:*" in line), "")
+
+    asset = asset_line.replace("📌 *Asset:* ", "").strip()
+    direction = direction_line.replace("📉 *Direction:* ", "").replace("⬆️ ", "").replace("⬇️ ", "").replace("*", "").strip()
+
+    # Background thread to handle result after 5 mins
+    threading.Thread(target=report_trade_result, args=(context.bot, CHAT_ID, asset, direction)).start()
+
 def start_auto(update: Update, context: CallbackContext):
     global auto_signal_job
     if auto_signal_job:
@@ -64,9 +79,6 @@ def stop_auto(update: Update, context: CallbackContext):
         update.message.reply_text("🛑 Auto Signals Stopped.")
     else:
         update.message.reply_text("❗ No Auto Signals running.")
-
-def send_auto_signal(context: CallbackContext):
-    context.bot.send_message(chat_id=CHAT_ID, text=generate_signal(), parse_mode='Markdown')
 
 # ✅ 📊 Stats Chart Function
 def send_stats(update: Update, context: CallbackContext):
