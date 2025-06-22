@@ -64,24 +64,6 @@ def send_auto_signal(context: CallbackContext):
     # Background thread to handle result after 5 mins
     threading.Thread(target=report_trade_result, args=(context.bot, CHAT_ID, asset, direction)).start()
 
-def start_auto(update: Update, context: CallbackContext):
-    global auto_signal_job
-    if auto_signal_job:
-        update.message.reply_text("🚀 Auto Signal already running.")
-        return
-    job_queue = context.job_queue
-    auto_signal_job = job_queue.run_repeating(send_auto_signal, interval=10, first=0, context=update.message.chat_id)
-    update.message.reply_text("✅ Auto Signals Started.")
-
-def stop_auto(update: Update, context: CallbackContext):
-    global auto_signal_job
-    if auto_signal_job:
-        auto_signal_job.schedule_removal()
-        auto_signal_job = None
-        update.message.reply_text("🛑 Auto Signals Stopped.")
-    else:
-        update.message.reply_text("❗ No Auto Signals running.")
-
 # ✅ 📊 Stats Chart Function
 def send_stats(update: Update, context: CallbackContext):
     wins = random.randint(20, 40)
