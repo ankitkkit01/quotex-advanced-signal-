@@ -1,8 +1,7 @@
 import datetime
 import pytz
 
-def get_adjusted_entry_time(seconds_before=15):
+def get_future_entry_time(mins_ahead=1):
     now = datetime.datetime.now(pytz.timezone("Asia/Kolkata"))
-    next_minute = now + datetime.timedelta(minutes=1)
-    entry_time = next_minute.replace(second=0, microsecond=0) - datetime.timedelta(seconds=seconds_before)
-    return entry_time.strftime("%H:%M:%S")
+    next_entry = (now + datetime.timedelta(minutes=mins_ahead)).replace(second=0, microsecond=0)
+    return next_entry.strftime("%H:%M:%S")
