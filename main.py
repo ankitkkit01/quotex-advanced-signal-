@@ -1,18 +1,25 @@
 import logging, random, threading, datetime, pytz
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
-from utils.quotex_api_client import get_client, get_payout
+
 from utils.pairs import all_pairs
 from utils.ai_learning import get_best_pairs
 from analysis.analysis import analyze_pair
 from reports.report_generator import generate_performance_chart
 from utils.result_handler import report_trade_result
+from utils.quotex_api_client import get_client, get_payout
 
 TOKEN = '7413469925:AAHd7Hi2g3609KoT15MSdrJSeqF1-YlCC54'
 CHAT_ID = 6065493589
 
+# Quotex Login Credentials
+QX_EMAIL = "arhimanshya@gmail.com"
+QX_PASSWORD = "12345678an"
+
 logging.basicConfig(level=logging.INFO)
 auto_signal_job = None
+
+client = get_client(QX_EMAIL, QX_PASSWORD)
 
 def get_future_entry_time(mins_ahead=1):
     tz = pytz.timezone("Asia/Kolkata")
@@ -35,7 +42,7 @@ def start(update: Update, context: CallbackContext):
 def generate_signal():
     while True:
         pair = random.choice(get_best_pairs(all_pairs))
-        result = analyze_pair(pair, None)
+        result = analyze_pair(pair, client)
         if result['accuracy'] >= 90 and result['trend'] != 'Sideways':
             break
 
