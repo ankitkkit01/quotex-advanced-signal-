@@ -4,7 +4,7 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, Callback
 
 from utils.pairs import all_pairs
 from utils.ai_learning import get_best_pairs
-from utils.time_utils import get_adjusted_entry_time
+from utils.time_utils import get_future_entry_time
 from analysis.analysis import analyze_pair
 from reports.report_generator import generate_performance_chart
 from utils.result_handler import report_trade_result
