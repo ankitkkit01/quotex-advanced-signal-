@@ -55,6 +55,19 @@ def generate_signal():
 
 📌 *Asset:* {result['pair']}
 🕐 *Timeframe:* 1 Minute
+🎯 *ENTRY at → {get_future_entry_time(1)}*
+📉 *Direction:* {'⬆️ UP' if result['signal'] == 'UP' else '⬇️ DOWN'}
+🌐 *Trend:* {result['trend']}
+📊 *Forecast Accuracy:* {result['accuracy']}%
+💰 *Payout Rate:* {result['payout']}%
+
+📝 *Strategy Logic:* {result['logic']}
+
+🇮🇳 _Times in IST (Asia/Kolkata)_
+"""
+
+📌 *Asset:* {result['pair']}
+🕐 *Timeframe:* 1 Minute
 ⏰ *Entry Time:* {get_adjusted_entry_time()}
 📉 *Direction:* {'⬆️ UP' if result['signal'] == 'UP' else '⬇️ DOWN'}
 🌐 *Trend:* {result['trend']}
