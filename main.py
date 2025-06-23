@@ -4,7 +4,7 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, Callback
 
 from utils.pairs import all_pairs
 from utils.ai_learning import get_best_pairs
-from utils.time_utils import get_next_minute_entry_time
+from utils.time_utils import get_adjusted_entry_time
 from analysis.analysis import analyze_pair
 from reports.report_generator import generate_performance_chart
 from utils.result_handler import report_trade_result
@@ -31,19 +31,23 @@ def start(update: Update, context: CallbackContext):
     )
 
 def generate_signal():
-    pair = random.choice(get_best_pairs(all_pairs))
-    result = analyze_pair(pair, None)
+    while True:
+        pair = random.choice(get_best_pairs(all_pairs))
+        result = analyze_pair(pair, None)
+        if result['accuracy'] >= 90:  # ✅ Only high accuracy trades
+            break
+
     return f"""👑 *Quotex OTC Signal* 👑
 
 📌 *Asset:* {result['pair']}
 🕐 *Timeframe:* 1 Minute
-⏰ *Entry Time:* {get_next_minute_entry_time()}
+⏰ *Entry Time:* {get_adjusted_entry_time()}
 📉 *Direction:* {'⬆️ UP' if result['signal'] == 'UP' else '⬇️ DOWN'}
 🌐 *Trend:* {result['trend']}
 📊 *Forecast Accuracy:* {result['accuracy']}%
 💰 *Payout Rate:* {result['payout']}%
 
-📝 *Strategy Logic:* {result.get('logic', 'Basic technical analysis')}
+📝 *Strategy Logic:* {result['logic']}
 
 🇮🇳 _All times are in UTC+5:30 (India Standard Time)_
 💸 *Follow Proper Money Management*
