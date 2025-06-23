@@ -79,8 +79,12 @@ def start_auto(update: Update, context: CallbackContext):
         update.callback_query.edit_message_text("⚙️ Auto signals are already running!")
         return
 
-    auto_signal_job = context.job_queue.run_repeating(send_auto_signal, interval=300, first=0)
-    update.callback_query.edit_message_text("✅ Auto signals started!")
+    # ✅ Turant pehla signal bhejna
+    send_auto_signal(context)
+
+    # ✅ Uske baad har 1 minute mein automatic signal aayega
+    auto_signal_job = context.job_queue.run_repeating(send_auto_signal, interval=60, first=60)
+    update.callback_query.edit_message_text("✅ Auto signals started!\n\n⚡ First signal sent. Next in 1 minute.")
 
 # ✅ Stop Auto Signal Function
 def stop_auto(update: Update, context: CallbackContext):
