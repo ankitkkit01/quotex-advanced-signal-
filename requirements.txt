@@ -1,4 +1,3 @@
 telegram
 pytz
-quotexapi
 matplotlib
