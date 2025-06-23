@@ -1,5 +1,5 @@
 import logging, random, threading, datetime, pytz
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
+from telegram import ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
 from utils.pairs import all_pairs
@@ -22,17 +22,11 @@ def get_future_entry_time(mins_ahead=1):
     return next_minute.strftime("%H:%M:%S")
 
 # ✅ Telegram Persistent Keyboard (Main Menu)
-def get_main_keyboard():
-    keyboard = [
-        [KeyboardButton("🚀 Start Auto Signals")],
-        [KeyboardButton("🛑 Stop Auto Signals")],
-        [KeyboardButton("📌 Custom Signal")],
-        [KeyboardButton("📊 Daily Stats"), KeyboardButton("📅 Monthly Stats")]
-    ]
-    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-
-# ✅ Start Command with Keyboard + Inline Buttons
 def start(update: Update, context: CallbackContext):
+    # ✅ REMOVE any old keyboard first
+    update.message.reply_text("♻️ Resetting Menu...", reply_markup=ReplyKeyboardRemove())
+
+    # ✅ Inline Buttons (for display)
     buttons = [
         [InlineKeyboardButton("📊 Daily Stats", callback_data='stats_daily')],
         [InlineKeyboardButton("📅 Monthly Stats", callback_data='stats_monthly')],
@@ -42,12 +36,14 @@ def start(update: Update, context: CallbackContext):
         [InlineKeyboardButton("🛑 Stop Auto Signals", callback_data='stop_auto')],
     ]
     update.message.reply_text(
-        "👋 Welcome to *Quotex Advanced Bot*!\n\n*Choose an option below or use the menu buttons:*",
+        "👋 Welcome to *Quotex Advanced Bot*!\n\n*Choose an option:*",
         parse_mode='Markdown',
         reply_markup=InlineKeyboardMarkup(buttons)
     )
+
+    # ✅ Persistent Keyboard active for Telegram Menu
     update.message.reply_text(
-        "📱 *Telegram Menu Active.*\nUse the buttons below anytime 👇",
+        "📱 *Telegram Menu Active.*\nUse the buttons below 👇",
         parse_mode='Markdown',
         reply_markup=get_main_keyboard()
     )
