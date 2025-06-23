@@ -1,10 +1,9 @@
-import logging, random, datetime, threading
+import logging, random, threading, time, datetime, pytz
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
 from utils.pairs import all_pairs
 from utils.ai_learning import get_best_pairs
-from utils.time_utils import get_future_entry_time
 from analysis.analysis import analyze_pair
 from reports.report_generator import generate_performance_chart
 from utils.result_handler import report_trade_result
@@ -14,6 +13,12 @@ CHAT_ID = 6065493589
 
 logging.basicConfig(level=logging.INFO)
 auto_signal_job = None
+
+def get_future_entry_time(mins_ahead=1):
+    tz = pytz.timezone("Asia/Kolkata")
+    now = datetime.datetime.now(tz)
+    next_minute = (now + datetime.timedelta(minutes=mins_ahead)).replace(second=0, microsecond=0)
+    return next_minute.strftime("%H:%M:%S")
 
 def start(update: Update, context: CallbackContext):
     buttons = [
@@ -31,17 +36,20 @@ def start(update: Update, context: CallbackContext):
     )
 
 def generate_signal():
+    # Find a HIGH ACCURACY, NON-SIDEWAYS trade
     while True:
         pair = random.choice(get_best_pairs(all_pairs))
         result = analyze_pair(pair, None)
         if result['accuracy'] >= 90 and result['trend'] != 'Sideways':
             break
 
+    entry_time = get_future_entry_time(1)
+
     return f"""👑 *Upcoming Quotex Signal* 👑
 
 📌 *Asset:* {result['pair']}
 🕐 *Timeframe:* 1 Minute
-🎯 *ENTRY at → {get_future_entry_time(1)}*
+🎯 *ENTRY at → {entry_time} (IST)*
 📉 *Direction:* {'⬆️ UP' if result['signal'] == 'UP' else '⬇️ DOWN'}
 🌐 *Trend:* {result['trend']}
 📊 *Forecast Accuracy:* {result['accuracy']}%
@@ -49,13 +57,16 @@ def generate_signal():
 
 📝 *Strategy Logic:* {result['logic']}
 
-🇮🇳 _Times in IST (Asia/Kolkata)_
+🇮🇳 _All times are in IST (Asia/Kolkata)_
+💸 *Follow Proper Money Management*
+⏳ _Always Select 1 Minute Time Frame._
 """
 
 def send_auto_signal(context: CallbackContext):
     signal_text = generate_signal()
     context.bot.send_message(chat_id=CHAT_ID, text=signal_text, parse_mode='Markdown')
 
+    # Extract asset & direction for result reporting
     lines = signal_text.splitlines()
     asset_line = next((line for line in lines if "*Asset:*" in line), "")
     direction_line = next((line for line in lines if "*Direction:*" in line), "")
@@ -71,7 +82,10 @@ def start_auto(update: Update, context: CallbackContext):
         update.callback_query.edit_message_text("⚙️ Auto signals are already running!")
         return
 
+    # FIRST SIGNAL → immediately
     send_auto_signal(context)
+
+    # NEXT SIGNALS → Every 1 min
     auto_signal_job = context.job_queue.run_repeating(send_auto_signal, interval=60, first=60)
     update.callback_query.edit_message_text("✅ Auto signals started! First signal sent, next every 1 minute.")
 
