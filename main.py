@@ -21,6 +21,9 @@ def get_future_entry_time(mins_ahead=1):
     return next_minute.strftime("%H:%M:%S")
 
 def start(update: Update, context: CallbackContext):
+    # ✅ FORCE REMOVE Telegram menu buttons (📊 Stats, 🎯 New Signal)
+    context.bot.set_chat_menu_button(chat_id=update.effective_chat.id, menu_button=MenuButtonDefault())
+
     update.message.reply_text("♻️ Resetting Keyboard...", reply_markup=ReplyKeyboardRemove())
 
     custom_keyboard = [
@@ -139,9 +142,6 @@ def text_handler(update: Update, context: CallbackContext):
 def main():
     updater = Updater(TOKEN, use_context=True)
     dp = updater.dispatcher
-
-    # ❌ Remove Telegram's persistent menu buttons (like Stats, New Signal)
-    updater.bot.set_chat_menu_button(menu_button=MenuButtonDefault())
 
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, text_handler))
