@@ -1,5 +1,5 @@
-import logging, random, threading, time, datetime, pytz
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
+import logging, random, threading, datetime, pytz
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, MenuButtonDefault
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
 from utils.pairs import all_pairs
@@ -58,7 +58,7 @@ def generate_signal():
 
 📝 *Strategy Logic:* {result['logic']}
 
-🇮🇳 _Times in IST (Asia/Kolkata)_
+🇮🇳 _All times are in IST (Asia/Kolkata)_
 💸 *Follow Proper Money Management*
 ⏳ _Always Select 1 Minute Time Frame._
 """
@@ -115,7 +115,6 @@ Performance: {performance}""",
 
 def text_handler(update: Update, context: CallbackContext):
     text = update.message.text
-
     if text == '📌 Custom Signal':
         update.message.reply_text(generate_signal(), parse_mode='Markdown')
     elif text == '📊 Daily Stats':
@@ -128,18 +127,22 @@ def text_handler(update: Update, context: CallbackContext):
         stop_auto(update, context)
     elif text == '⚡ 10s Strategy Signal':
         update.message.reply_text("⚡ Coming Soon: Advanced 10-second Strategy Signals!", parse_mode='Markdown')
-    elif text == '📥 Export CSV':
-        update.message.reply_text("📥 Exporting CSV... (Coming soon)", parse_mode='Markdown')
-    elif text == '📈 View All Signals':
-        update.message.reply_text("📈 All signals will be listed here... (Coming soon)", parse_mode='Markdown')
     elif text == '⛔ Clear Results':
-        update.message.reply_text("🗑 Trade results cleared! (Demo)", parse_mode='Markdown')
+        update.message.reply_text("🧹 All past signal results cleared. (Coming soon)")
+    elif text == '📈 View All Signals':
+        update.message.reply_text("📈 Signal logs are under development.")
+    elif text == '📥 Export CSV':
+        update.message.reply_text("📤 CSV export feature coming soon.")
     else:
         update.message.reply_text("❗ Unknown Command. Please use the provided keyboard buttons.")
 
 def main():
     updater = Updater(TOKEN, use_context=True)
     dp = updater.dispatcher
+
+    # ❌ Remove Telegram's persistent menu buttons (like Stats, New Signal)
+    updater.bot.set_chat_menu_button(menu_button=MenuButtonDefault())
+
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, text_handler))
     updater.start_polling()
