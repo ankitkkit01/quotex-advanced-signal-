@@ -1,5 +1,5 @@
-import logging, random, threading, datetime, pytz
-from telegram import ReplyKeyboardRemove
+import logging, random, threading, time, datetime, pytz
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
 from utils.pairs import all_pairs
@@ -14,19 +14,25 @@ CHAT_ID = 6065493589
 logging.basicConfig(level=logging.INFO)
 auto_signal_job = None
 
-# ✅ IST Time for Entry
+# ✅ GET FUTURE ENTRY TIME
 def get_future_entry_time(mins_ahead=1):
     tz = pytz.timezone("Asia/Kolkata")
     now = datetime.datetime.now(tz)
     next_minute = (now + datetime.timedelta(minutes=mins_ahead)).replace(second=0, microsecond=0)
     return next_minute.strftime("%H:%M:%S")
 
-# ✅ Telegram Persistent Keyboard (Main Menu)
+# ✅ MAIN PERSISTENT KEYBOARD
+def get_main_keyboard():
+    keyboard = [
+        ['📌 Start', '📊 Stats'],
+        ['🚀 Start Auto', '🛑 Stop Auto']
+    ]
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
+# ✅ START FUNCTION (Resets Everything)
 def start(update: Update, context: CallbackContext):
-    # ✅ REMOVE any old keyboard first
     update.message.reply_text("♻️ Resetting Menu...", reply_markup=ReplyKeyboardRemove())
 
-    # ✅ Inline Buttons (for display)
     buttons = [
         [InlineKeyboardButton("📊 Daily Stats", callback_data='stats_daily')],
         [InlineKeyboardButton("📅 Monthly Stats", callback_data='stats_monthly')],
@@ -41,14 +47,13 @@ def start(update: Update, context: CallbackContext):
         reply_markup=InlineKeyboardMarkup(buttons)
     )
 
-    # ✅ Persistent Keyboard active for Telegram Menu
     update.message.reply_text(
         "📱 *Telegram Menu Active.*\nUse the buttons below 👇",
         parse_mode='Markdown',
         reply_markup=get_main_keyboard()
     )
 
-# ✅ Generate Signal (High Accuracy Only)
+# ✅ GENERATE SIGNAL FUNCTION
 def generate_signal():
     while True:
         pair = random.choice(get_best_pairs(all_pairs))
@@ -70,12 +75,12 @@ def generate_signal():
 
 📝 *Strategy Logic:* {result['logic']}
 
-🇮🇳 _All times in IST (Asia/Kolkata)_
+🇮🇳 _All times are in IST (Asia/Kolkata)_
 💸 *Follow Proper Money Management*
 ⏳ _Always Select 1 Minute Time Frame._
 """
 
-# ✅ Auto Signal + Result Reporting
+# ✅ SEND AUTO SIGNAL
 def send_auto_signal(context: CallbackContext):
     signal_text = generate_signal()
     context.bot.send_message(chat_id=CHAT_ID, text=signal_text, parse_mode='Markdown')
@@ -89,25 +94,28 @@ def send_auto_signal(context: CallbackContext):
 
     threading.Thread(target=report_trade_result, args=(context.bot, CHAT_ID, asset, direction)).start()
 
+# ✅ START AUTO SIGNALS
 def start_auto(update: Update, context: CallbackContext):
     global auto_signal_job
     if auto_signal_job:
-        update.message.reply_text("⚙️ Auto signals are already running!", reply_markup=get_main_keyboard())
+        update.callback_query.edit_message_text("⚙️ Auto signals are already running!")
         return
 
     send_auto_signal(context)
     auto_signal_job = context.job_queue.run_repeating(send_auto_signal, interval=60, first=60)
-    update.message.reply_text("✅ Auto signals started! First signal sent, next every 1 minute.", reply_markup=get_main_keyboard())
+    update.callback_query.edit_message_text("✅ Auto signals started! First signal sent, next every 1 minute.")
 
+# ✅ STOP AUTO SIGNALS
 def stop_auto(update: Update, context: CallbackContext):
     global auto_signal_job
     if auto_signal_job:
         auto_signal_job.schedule_removal()
         auto_signal_job = None
-        update.message.reply_text("🛑 Auto signals stopped!", reply_markup=get_main_keyboard())
+        update.callback_query.edit_message_text("🛑 Auto signals stopped!")
     else:
-        update.message.reply_text("⚠️ No auto signals are currently running.", reply_markup=get_main_keyboard())
+        update.callback_query.edit_message_text("⚠️ No auto signals are currently running.")
 
+# ✅ GENERATE STATS IMAGE
 def send_stats(update: Update, context: CallbackContext, period='daily'):
     wins = random.randint(20, 40)
     losses = random.randint(5, 15)
@@ -126,7 +134,7 @@ Performance: {performance}""",
         parse_mode='Markdown'
     )
 
-# ✅ Inline Button Handler
+# ✅ BUTTON HANDLER
 def button_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
@@ -143,45 +151,18 @@ def button_handler(update: Update, context: CallbackContext):
     elif query.data == 'strategy_10s':
         query.edit_message_text("⚡ Coming Soon: Advanced 10-second Strategy Signals!", parse_mode='Markdown')
 
-# ✅ Handle Text Menu Buttons (Persistent Keyboard)
-def text_handler(update: Update, context: CallbackContext):
-    text = update.message.text
-    if text == "🚀 Start Auto Signals":
-        start_auto(update, context)
-    elif text == "🛑 Stop Auto Signals":
-        stop_auto(update, context)
-    elif text == "📌 Custom Signal":
-        update.message.reply_text(generate_signal(), parse_mode='Markdown', reply_markup=get_main_keyboard())
-    elif text == "📊 Daily Stats":
-        send_stats(update, context, period='daily')
-    elif text == "📅 Monthly Stats":
-        send_stats(update, context, period='monthly')
-    else:
-        update.message.reply_text("❗ Unknown command. Please use the menu buttons.", reply_markup=get_main_keyboard())
+# ✅ /MENU Command to Reset
+def refresh_menu(update: Update, context: CallbackContext):
+    update.message.reply_text("♻️ Refreshing Menu...", reply_markup=ReplyKeyboardRemove())
+    start(update, context)
 
+# ✅ MAIN FUNCTION
 def main():
     updater = Updater(TOKEN, use_context=True)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("menu", refresh_menu))
     dp.add_handler(CallbackQueryHandler(button_handler))
-    dp.add_handler(CommandHandler("menu", start))  # Optional → use `/menu`
-    dp.add_handler(CommandHandler("help", start))
-    dp.add_handler(CommandHandler("startmenu", start))  # Optional extra
-    dp.add_handler(CommandHandler("keyboard", start))   # Optional extra
-    dp.add_handler(CommandHandler("buttons", start))    # Optional extra
-    dp.add_handler(CommandHandler("restart", start))    # Optional extra
-    dp.add_handler(CommandHandler("quotex", start))     # Optional extra
-    dp.add_handler(CommandHandler("signals", start))    # Optional extra
-    dp.add_handler(CommandHandler("begin", start))      # Optional extra
-    dp.add_handler(CommandHandler("main", start))       # Optional extra
-    dp.add_handler(CommandHandler("get", start))        # Optional extra
-    dp.add_handler(CommandHandler("panel", start))      # Optional extra
-    dp.add_handler(CommandHandler("bot", start))        # Optional extra
-    dp.add_handler(CommandHandler("dashboard", start))  # Optional extra
-
-    from telegram.ext import MessageHandler, Filters
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, text_handler))
-
     updater.start_polling()
     updater.idle()
 
