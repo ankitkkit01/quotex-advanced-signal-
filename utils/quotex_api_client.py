@@ -1,9 +1,22 @@
 from quotexapi.client import Quotex
+import logging
 
-def get_client(arhimanshya@gmail.com):
-    client = Quotex(12345678an)
+logging.basicConfig(level=logging.INFO)
+
+EMAIL = "arhimanshya@gmail.com"
+PASSWORD = "12345678an"
+
+def get_client():
+    client = Quotex(EMAIL, PASSWORD)
     client.connect()
-    return client
+    client.login()
 
-def get_payout(client, asset):
-    return client.get_all_profit()[asset]["turbo"]
+    if client.check_connect():
+        logging.info("✅ Connected to Quotex")
+        return client
+    else:
+        raise Exception("❌ Quotex connection failed")
+
+def subscribe_to_candles(client, asset, timeframe, callback):
+    client.subscribe_candles(asset, timeframe)
+    client.set_candle_callback(callback)
