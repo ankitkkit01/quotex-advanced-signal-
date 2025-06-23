@@ -1,25 +1,26 @@
 import logging, random, threading, datetime, pytz
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
-
+from utils.quotex_api_client import get_client, get_payout
 from utils.pairs import all_pairs
 from utils.ai_learning import get_best_pairs
 from analysis.analysis import analyze_pair
 from reports.report_generator import generate_performance_chart
 from utils.result_handler import report_trade_result
-from utils.quotex_api_client import get_client, get_payout
 
+# Telegram Token and Chat ID
 TOKEN = '7413469925:AAHd7Hi2g3609KoT15MSdrJSeqF1-YlCC54'
 CHAT_ID = 6065493589
 
-# Quotex Login Credentials
-QX_EMAIL = "arhimanshya@gmail.com"
-QX_PASSWORD = "12345678an"
+# Quotex Account (PUT your actual email & password here)
+EMAIL = "arhimanshya@gmail.com"
+PASSWORD = "12345678an"
 
 logging.basicConfig(level=logging.INFO)
 auto_signal_job = None
 
-client = get_client(QX_EMAIL, QX_PASSWORD)
+# Initialize Quotex Client
+client = get_client(EMAIL, PASSWORD)
 
 def get_future_entry_time(mins_ahead=1):
     tz = pytz.timezone("Asia/Kolkata")
@@ -42,11 +43,12 @@ def start(update: Update, context: CallbackContext):
 def generate_signal():
     while True:
         pair = random.choice(get_best_pairs(all_pairs))
-        result = analyze_pair(pair, client)
+        result = analyze_pair(pair, None)
         if result['accuracy'] >= 90 and result['trend'] != 'Sideways':
             break
 
     entry_time = get_future_entry_time(1)
+    payout = get_payout(client, result['pair'])
 
     return f"""👑 *Upcoming Quotex Signal* 👑
 
@@ -56,7 +58,7 @@ def generate_signal():
 📉 *Direction:* {'⬆️ UP' if result['signal'] == 'UP' else '⬇️ DOWN'}
 🌐 *Trend:* {result['trend']}
 📊 *Forecast Accuracy:* {result['accuracy']}%
-💰 *Payout Rate:* {result['payout']}%
+💰 *Payout Rate:* {payout}%
 
 📝 *Strategy Logic:* {result['logic']}
 
@@ -69,6 +71,7 @@ def send_auto_signal(context: CallbackContext):
     signal_text = generate_signal()
     context.bot.send_message(chat_id=CHAT_ID, text=signal_text, parse_mode='Markdown')
 
+    # Result Reporting
     lines = signal_text.splitlines()
     asset_line = next((line for line in lines if "*Asset:*" in line), "")
     direction_line = next((line for line in lines if "*Direction:*" in line), "")
