@@ -116,20 +116,8 @@ def button_handler(update: Update, context: CallbackContext):
     elif query.data == 'custom_signal':
         query.edit_message_text(text=generate_signal(), parse_mode='Markdown')
     elif query.data == 'stats_daily':
-        send_stats(update, context, period='daily')
+        send_stats(update, context, period='daily')  # ✅ Yeh missing tha
     elif query.data == 'stats_monthly':
         send_stats(update, context, period='monthly')
     elif query.data == 'strategy_10s':
         query.edit_message_text("⚡ Coming Soon: Advanced 10-second Strategy Signals!", parse_mode='Markdown')
-
-# ✅ Main
-def main():
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CallbackQueryHandler(button_handler))
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == "__main__":
-    main()
