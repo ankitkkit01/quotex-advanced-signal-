@@ -8,19 +8,14 @@ from analysis.analysis import analyze_pair
 from reports.report_generator import generate_performance_chart
 from utils.result_handler import report_trade_result
 
-# Telegram Token and Chat ID
 TOKEN = '7413469925:AAHd7Hi2g3609KoT15MSdrJSeqF1-YlCC54'
 CHAT_ID = 6065493589
-
-# Quotex Account (PUT your actual email & password here)
-EMAIL = "arhimanshya@gmail.com"
-PASSWORD = "12345678an"
 
 logging.basicConfig(level=logging.INFO)
 auto_signal_job = None
 
-# Initialize Quotex Client
-client = get_client(EMAIL, PASSWORD)
+# ✅ Initialize Quotex Client
+client = get_client()
 
 def get_future_entry_time(mins_ahead=1):
     tz = pytz.timezone("Asia/Kolkata")
@@ -48,7 +43,7 @@ def generate_signal():
             break
 
     entry_time = get_future_entry_time(1)
-    payout = get_payout(client, result['pair'])
+    payout = get_payout(result['pair'])  # Dynamic payout or static 95%
 
     return f"""👑 *Upcoming Quotex Signal* 👑
 
@@ -71,7 +66,6 @@ def send_auto_signal(context: CallbackContext):
     signal_text = generate_signal()
     context.bot.send_message(chat_id=CHAT_ID, text=signal_text, parse_mode='Markdown')
 
-    # Result Reporting
     lines = signal_text.splitlines()
     asset_line = next((line for line in lines if "*Asset:*" in line), "")
     direction_line = next((line for line in lines if "*Direction:*" in line), "")
