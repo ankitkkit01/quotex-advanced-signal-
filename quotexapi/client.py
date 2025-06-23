@@ -1,4 +1,4 @@
-from quotexapi.client import Quotex
+from .core import Quotex
 
 def get_client():
     email = "arhimanshya@gmail.com"
@@ -13,4 +13,4 @@ def get_client():
         raise Exception("❌ Failed to connect to Quotex.")
 
 def get_payout(asset):
-    return 95  # Static payout, real dynamic payout ka code later add karenge
+    return 95  # Static payout, dynamic payout ka code later add karenge
