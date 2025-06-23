@@ -31,12 +31,11 @@ def start(update: Update, context: CallbackContext):
     )
 
 def generate_signal():
-    pair = random.choice(get_best_pairs(all_pairs))
-    result = analyze_pair(pair, None)
-
-    while result['accuracy'] < 90 or result['trend'] == 'Sideways':
+    while True:
         pair = random.choice(get_best_pairs(all_pairs))
         result = analyze_pair(pair, None)
+        if result['accuracy'] >= 90 and result['trend'] != 'Sideways':
+            break
 
     return f"""👑 *Upcoming Quotex Signal* 👑
 
@@ -51,34 +50,6 @@ def generate_signal():
 📝 *Strategy Logic:* {result['logic']}
 
 🇮🇳 _Times in IST (Asia/Kolkata)_
-"""
-
-📌 *Asset:* {result['pair']}
-🕐 *Timeframe:* 1 Minute
-🎯 *ENTRY at → {get_future_entry_time(1)}*
-📉 *Direction:* {'⬆️ UP' if result['signal'] == 'UP' else '⬇️ DOWN'}
-🌐 *Trend:* {result['trend']}
-📊 *Forecast Accuracy:* {result['accuracy']}%
-💰 *Payout Rate:* {result['payout']}%
-
-📝 *Strategy Logic:* {result['logic']}
-
-🇮🇳 _Times in IST (Asia/Kolkata)_
-"""
-
-📌 *Asset:* {result['pair']}
-🕐 *Timeframe:* 1 Minute
-⏰ *Entry Time:* {get_adjusted_entry_time()}
-📉 *Direction:* {'⬆️ UP' if result['signal'] == 'UP' else '⬇️ DOWN'}
-🌐 *Trend:* {result['trend']}
-📊 *Forecast Accuracy:* {result['accuracy']}%
-💰 *Payout Rate:* {result['payout']}%
-
-📝 *Strategy Logic:* {result['logic']}
-
-🇮🇳 _All times are in UTC+5:30 (India Standard Time)_
-💸 *Follow Proper Money Management*
-⏳ _Always Select 1 Minute Time Frame._
 """
 
 def send_auto_signal(context: CallbackContext):
