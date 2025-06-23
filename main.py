@@ -13,27 +13,13 @@ CHAT_ID = 6065493589
 
 logging.basicConfig(level=logging.INFO)
 auto_signal_job = None
+auto_signal_running = False  # ✅ NEW FLAG
 
 def get_future_entry_time(mins_ahead=1):
     tz = pytz.timezone("Asia/Kolkata")
     now = datetime.datetime.now(tz)
     next_minute = (now + datetime.timedelta(minutes=mins_ahead)).replace(second=0, microsecond=0)
     return next_minute.strftime("%H:%M:%S")
-
-def start(update: Update, context: CallbackContext):
-    buttons = [
-        [InlineKeyboardButton("📊 Daily Stats", callback_data='stats_daily')],
-        [InlineKeyboardButton("📅 Monthly Stats", callback_data='stats_monthly')],
-        [InlineKeyboardButton("📌 Custom Signal", callback_data='custom_signal')],
-        [InlineKeyboardButton("⚡ 10s Strategy Signal", callback_data='strategy_10s')],
-        [InlineKeyboardButton("🚀 Start Auto Signals", callback_data='start_auto')],
-        [InlineKeyboardButton("🛑 Stop Auto Signals", callback_data='stop_auto')],
-    ]
-    update.message.reply_text(
-        "👋 Welcome to *Quotex Advanced Bot*!\n\n*Choose an option:*",
-        parse_mode='Markdown',
-        reply_markup=InlineKeyboardMarkup(buttons)
-    )
 
 def generate_signal():
     while True:
@@ -62,6 +48,10 @@ def generate_signal():
 """
 
 def send_auto_signal(context: CallbackContext):
+    global auto_signal_running
+    if not auto_signal_running:
+        return
+
     signal_text = generate_signal()
     context.bot.send_message(chat_id=CHAT_ID, text=signal_text, parse_mode='Markdown')
 
@@ -72,26 +62,46 @@ def send_auto_signal(context: CallbackContext):
     asset = asset_line.replace("📌 *Asset:* ", "").strip()
     direction = direction_line.replace("📉 *Direction:* ", "").replace("⬆️ ", "").replace("⬇️ ", "").replace("*", "").strip()
 
-    threading.Thread(target=report_trade_result, args=(context.bot, CHAT_ID, asset, direction)).start()
+    # ✅ Report in thread ONLY IF auto_signal_running is still True
+    if auto_signal_running:
+        threading.Thread(target=report_trade_result, args=(context.bot, CHAT_ID, asset, direction)).start()
 
 def start_auto(update: Update, context: CallbackContext):
-    global auto_signal_job
+    global auto_signal_job, auto_signal_running
     if auto_signal_job:
         update.callback_query.edit_message_text("⚙️ Auto signals are already running!")
         return
 
+    auto_signal_running = True
     send_auto_signal(context)
     auto_signal_job = context.job_queue.run_repeating(send_auto_signal, interval=60, first=60)
     update.callback_query.edit_message_text("✅ Auto signals started! First signal sent, next every 1 minute.")
 
 def stop_auto(update: Update, context: CallbackContext):
-    global auto_signal_job
+    global auto_signal_job, auto_signal_running
     if auto_signal_job:
         auto_signal_job.schedule_removal()
         auto_signal_job = None
+        auto_signal_running = False
         update.callback_query.edit_message_text("🛑 Auto signals stopped!")
     else:
         update.callback_query.edit_message_text("⚠️ No auto signals are currently running.")
+
+def button_handler(update: Update, context: CallbackContext):
+    query = update.callback_query
+    query.answer()
+    if query.data == 'start_auto':
+        start_auto(update, context)
+    elif query.data == 'stop_auto':
+        stop_auto(update, context)
+    elif query.data == 'custom_signal':
+        query.edit_message_text(text=generate_signal(), parse_mode='Markdown')
+    elif query.data == 'stats_daily':
+        send_stats(update, context, period='daily')
+    elif query.data == 'stats_monthly':
+        send_stats(update, context, period='monthly')
+    elif query.data == 'strategy_10s':
+        query.edit_message_text("⚡ Coming Soon: Advanced 10-second Strategy Signals!", parse_mode='Markdown')
 
 def send_stats(update: Update, context: CallbackContext, period='daily'):
     wins = random.randint(20, 40)
@@ -110,22 +120,6 @@ Accuracy: {accuracy}%
 Performance: {performance}""",
         parse_mode='Markdown'
     )
-
-def button_handler(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-    if query.data == 'start_auto':
-        start_auto(update, context)
-    elif query.data == 'stop_auto':
-        stop_auto(update, context)
-    elif query.data == 'custom_signal':
-        query.edit_message_text(text=generate_signal(), parse_mode='Markdown')
-    elif query.data == 'stats_daily':
-        send_stats(update, context, period='daily')
-    elif query.data == 'stats_monthly':
-        send_stats(update, context, period='monthly')
-    elif query.data == 'strategy_10s':
-        query.edit_message_text("⚡ Coming Soon: Advanced 10-second Strategy Signals!", parse_mode='Markdown')
 
 def main():
     updater = Updater(TOKEN, use_context=True)
