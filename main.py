@@ -135,36 +135,29 @@ Performance: {performance}""",
     )
 
 # ✅ BUTTON HANDLER
-def button_handler(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-    if query.data == 'start_auto':
-        start_auto(update, context)
-    elif query.data == 'stop_auto':
-        stop_auto(update, context)
-    elif query.data == 'custom_signal':
-        query.edit_message_text(text=generate_signal(), parse_mode='Markdown')
-    elif query.data == 'stats_daily':
-        send_stats(update, context, period='daily')
-    elif query.data == 'stats_monthly':
-        send_stats(update, context, period='monthly')
-    elif query.data == 'strategy_10s':
-        query.edit_message_text("⚡ Coming Soon: Advanced 10-second Strategy Signals!", parse_mode='Markdown')
+def start(update: Update, context: CallbackContext):
+    # Clear Old Menu
+    update.message.reply_text("♻️ Resetting Menu...", reply_markup=ReplyKeyboardRemove())
 
-# ✅ /MENU Command to Reset
-def refresh_menu(update: Update, context: CallbackContext):
-    update.message.reply_text("♻️ Refreshing Menu...", reply_markup=ReplyKeyboardRemove())
-    start(update, context)
+    # Inline Buttons (Clickable Inside Message)
+    buttons = [
+        [InlineKeyboardButton("📊 Daily Stats", callback_data='stats_daily')],
+        [InlineKeyboardButton("📅 Monthly Stats", callback_data='stats_monthly')],
+        [InlineKeyboardButton("📌 Custom Signal", callback_data='custom_signal')],
+        [InlineKeyboardButton("⚡ 10s Strategy Signal", callback_data='strategy_10s')],
+        [InlineKeyboardButton("🚀 Start Auto Signals", callback_data='start_auto')],
+        [InlineKeyboardButton("🛑 Stop Auto Signals", callback_data='stop_auto')],
+    ]
+    update.message.reply_text(
+        "👋 Welcome to *Quotex Advanced Bot*!\n\n*Choose an option:*",
+        parse_mode='Markdown',
+        reply_markup=InlineKeyboardMarkup(buttons)
+    )
 
-# ✅ MAIN FUNCTION
-def main():
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("menu", refresh_menu))
-    dp.add_handler(CallbackQueryHandler(button_handler))
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == "__main__":
-    main()
+    # Permanent Keyboard (Bottom of Chat)
+    keyboard = [
+        ['📌 Start', '📊 Stats'],
+        ['🚀 Start Auto', '🛑 Stop Auto']
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    update.message.reply_text("📱 *Telegram Menu Active.*\nUse the buttons below 👇", parse_mode='Markdown', reply_markup=reply_markup)
