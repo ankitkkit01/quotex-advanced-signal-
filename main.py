@@ -1,10 +1,10 @@
 import logging, random, datetime, threading
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, JobQueue
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
 from utils.pairs import all_pairs
 from utils.ai_learning import get_best_pairs
-from utils.time_utils import is_exact_time, get_next_minute_entry_time
+from utils.time_utils import get_next_minute_entry_time
 from analysis.analysis import analyze_pair
 from reports.report_generator import generate_performance_chart
 from utils.result_handler import report_trade_result
@@ -45,14 +45,12 @@ def generate_signal():
 📊 *Forecast Accuracy:* {result['accuracy']}%
 💰 *Payout Rate:* {result['payout']}%
 
-📝 *Strategy Logic:* {result['logic']}
-
 🇮🇳 _All times are in UTC+5:30 (India Standard Time)_
 💸 *Follow Proper Money Management*
 ⏳ _Always Select 1 Minute Time Frame._
 """
 
-# ✅ Auto Signal With Result (Immediate + Repeating)
+# ✅ Auto Signal With Result Reporting
 def send_auto_signal(context: CallbackContext):
     signal_text = generate_signal()
     context.bot.send_message(chat_id=CHAT_ID, text=signal_text, parse_mode='Markdown')
@@ -66,21 +64,19 @@ def send_auto_signal(context: CallbackContext):
 
     threading.Thread(target=report_trade_result, args=(context.bot, CHAT_ID, asset, direction)).start()
 
+# ✅ Start Auto
 def start_auto(update: Update, context: CallbackContext):
     global auto_signal_job
     if auto_signal_job:
         update.callback_query.edit_message_text("⚙️ Auto signals are already running!")
         return
 
-    # ✅ Send one signal immediately
+    # First signal immediately
     send_auto_signal(context)
-
-    # ✅ Repeat signals every 1 minute
     auto_signal_job = context.job_queue.run_repeating(send_auto_signal, interval=60, first=60)
+    update.callback_query.edit_message_text("✅ Auto signals started! First signal sent, next every 1 minute.")
 
-    update.callback_query.edit_message_text("✅ Auto signals started!\n\n➡️ First signal sent immediately.\n➡️ Next signals every 1 minute.")
-
-# ✅ Stop Auto Signal Function
+# ✅ Stop Auto
 def stop_auto(update: Update, context: CallbackContext):
     global auto_signal_job
     if auto_signal_job:
@@ -90,16 +86,13 @@ def stop_auto(update: Update, context: CallbackContext):
     else:
         update.callback_query.edit_message_text("⚠️ No auto signals are currently running.")
 
-# ✅ Stats Chart Function
+# ✅ Stats
 def send_stats(update: Update, context: CallbackContext, period='daily'):
     wins = random.randint(20, 40)
     losses = random.randint(5, 15)
     accuracy = round((wins / (wins + losses)) * 100, 2)
-
     img = generate_performance_chart(wins, losses, accuracy, period)
-
     performance = "GOOD" if accuracy >= 80 else "AVERAGE" if accuracy >= 60 else "BAD"
-
     context.bot.send_photo(
         chat_id=update.effective_chat.id,
         photo=img,
@@ -123,3 +116,20 @@ def button_handler(update: Update, context: CallbackContext):
     elif query.data == 'custom_signal':
         query.edit_message_text(text=generate_signal(), parse_mode='Markdown')
     elif query.data == 'stats_daily':
+        send_stats(update, context, period='daily')
+    elif query.data == 'stats_monthly':
+        send_stats(update, context, period='monthly')
+    elif query.data == 'strategy_10s':
+        query.edit_message_text("⚡ Coming Soon: Advanced 10-second Strategy Signals!", parse_mode='Markdown')
+
+# ✅ Main
+def main():
+    updater = Updater(TOKEN, use_context=True)
+    dp = updater.dispatcher
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CallbackQueryHandler(button_handler))
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == "__main__":
+    main()
