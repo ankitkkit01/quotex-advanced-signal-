@@ -31,13 +31,27 @@ def start(update: Update, context: CallbackContext):
     )
 
 def generate_signal():
-    while True:
+    pair = random.choice(get_best_pairs(all_pairs))
+    result = analyze_pair(pair, None)
+
+    while result['accuracy'] < 90 or result['trend'] == 'Sideways':
         pair = random.choice(get_best_pairs(all_pairs))
         result = analyze_pair(pair, None)
-        if result['accuracy'] >= 90:  # ✅ Only high accuracy trades
-            break
 
-    return f"""👑 *Quotex OTC Signal* 👑
+    return f"""👑 *Upcoming Quotex Signal* 👑
+
+📌 *Asset:* {result['pair']}
+🕐 *Timeframe:* 1 Minute
+🎯 *ENTRY at → {get_future_entry_time(1)}*
+📉 *Direction:* {'⬆️ UP' if result['signal'] == 'UP' else '⬇️ DOWN'}
+🌐 *Trend:* {result['trend']}
+📊 *Forecast Accuracy:* {result['accuracy']}%
+💰 *Payout Rate:* {result['payout']}%
+
+📝 *Strategy Logic:* {result['logic']}
+
+🇮🇳 _Times in IST (Asia/Kolkata)_
+"""
 
 📌 *Asset:* {result['pair']}
 🕐 *Timeframe:* 1 Minute
