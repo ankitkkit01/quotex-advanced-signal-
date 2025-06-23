@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 def get_adjusted_entry_time():
-    now = datetime.utcnow() + timedelta(minutes=1)
-    adjusted_time = now.replace(second=5, microsecond=0)  # ✅ ENTRY BEFORE CANDLE START
+    ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    entry_time = ist_now + timedelta(minutes=1)
+    adjusted_time = entry_time.replace(second=5, microsecond=0)
     return adjusted_time.strftime("%H:%M:%S")
