@@ -1,28 +1,41 @@
 import random
 
-def analyze_pair(pair, timeframe):
-    # Mock analysis with higher chance of good accuracy during certain conditions
-    accuracy = random.randint(88, 97)
-    trend = random.choice(['Uptrend', 'Downtrend', 'Sideways'])
+def analyze_pair(pair, data=None):
+    """
+    Professional analysis using mock indicators for demonstration.
+    Real indicator values should be calculated here.
+    """
 
-    # Avoid sideways trend automatically for better signals
-    while trend == 'Sideways' or accuracy < 90:
-        accuracy = random.randint(90, 99)
-        trend = random.choice(['Uptrend', 'Downtrend'])
+    # 🎯 Mocked realistic indicator readings (Replace with real-time analysis)
+    rsi = random.randint(20, 80)
+    macd_signal = random.choice(['Bullish', 'Bearish', 'Neutral'])
+    trend = random.choice(['UP', 'DOWN', 'Sideways'])
+    support_resistance = random.choice(['Near Support', 'Near Resistance', 'Middle Zone'])
 
-    signal = 'UP' if trend == 'Uptrend' else 'DOWN'
+    # 🎯 Signal decision based on combined indicators
+    if rsi < 35 and macd_signal == 'Bullish' and trend == 'UP' and support_resistance == 'Near Support':
+        signal = 'UP'
+        logic = f"RSI({rsi}) Oversold, MACD Bullish, Near Support"
+        accuracy = random.randint(91, 95)
+    elif rsi > 65 and macd_signal == 'Bearish' and trend == 'DOWN' and support_resistance == 'Near Resistance':
+        signal = 'DOWN'
+        logic = f"RSI({rsi}) Overbought, MACD Bearish, Near Resistance"
+        accuracy = random.randint(91, 95)
+    else:
+        signal = random.choice(['UP', 'DOWN'])
+        logic = f"RSI({rsi}), MACD {macd_signal}, Trend {trend}, {support_resistance}"
+        accuracy = random.randint(75, 89)
 
-    # Generate a fake payout (between 80% and 95%)
-    payout = random.randint(80, 95)
-
-    # Generate a professional analysis logic description
-    logic = f"Price near {'support' if signal == 'UP' else 'resistance'} zone, {trend} confirmed, RSI & MACD aligned."
+    # Sideways filter → reduce accuracy if sideways
+    if trend == 'Sideways':
+        accuracy = random.randint(60, 74)
+        logic += " ⚠️ Sideways Market Detected"
 
     return {
         'pair': pair,
         'signal': signal,
-        'trend': trend,
         'accuracy': accuracy,
-        'payout': payout,
+        'trend': trend,
+        'payout': random.randint(80, 95),
         'logic': logic
     }
