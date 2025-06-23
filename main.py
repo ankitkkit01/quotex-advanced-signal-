@@ -15,7 +15,6 @@ CHAT_ID = 6065493589
 logging.basicConfig(level=logging.INFO)
 auto_signal_job = None
 
-# ✅ Start Menu
 def start(update: Update, context: CallbackContext):
     buttons = [
         [InlineKeyboardButton("📊 Daily Stats", callback_data='stats_daily')],
@@ -31,7 +30,6 @@ def start(update: Update, context: CallbackContext):
         reply_markup=InlineKeyboardMarkup(buttons)
     )
 
-# ✅ Generate Signal Function
 def generate_signal():
     pair = random.choice(get_best_pairs(all_pairs))
     result = analyze_pair(pair, None)
@@ -45,12 +43,13 @@ def generate_signal():
 📊 *Forecast Accuracy:* {result['accuracy']}%
 💰 *Payout Rate:* {result['payout']}%
 
+📝 *Strategy Logic:* {result.get('logic', 'Basic technical analysis')}
+
 🇮🇳 _All times are in UTC+5:30 (India Standard Time)_
 💸 *Follow Proper Money Management*
 ⏳ _Always Select 1 Minute Time Frame._
 """
 
-# ✅ Auto Signal With Result Reporting
 def send_auto_signal(context: CallbackContext):
     signal_text = generate_signal()
     context.bot.send_message(chat_id=CHAT_ID, text=signal_text, parse_mode='Markdown')
@@ -64,19 +63,16 @@ def send_auto_signal(context: CallbackContext):
 
     threading.Thread(target=report_trade_result, args=(context.bot, CHAT_ID, asset, direction)).start()
 
-# ✅ Start Auto
 def start_auto(update: Update, context: CallbackContext):
     global auto_signal_job
     if auto_signal_job:
         update.callback_query.edit_message_text("⚙️ Auto signals are already running!")
         return
 
-    # First signal immediately
     send_auto_signal(context)
     auto_signal_job = context.job_queue.run_repeating(send_auto_signal, interval=60, first=60)
     update.callback_query.edit_message_text("✅ Auto signals started! First signal sent, next every 1 minute.")
 
-# ✅ Stop Auto
 def stop_auto(update: Update, context: CallbackContext):
     global auto_signal_job
     if auto_signal_job:
@@ -86,7 +82,6 @@ def stop_auto(update: Update, context: CallbackContext):
     else:
         update.callback_query.edit_message_text("⚠️ No auto signals are currently running.")
 
-# ✅ Stats
 def send_stats(update: Update, context: CallbackContext, period='daily'):
     wins = random.randint(20, 40)
     losses = random.randint(5, 15)
@@ -105,7 +100,6 @@ Performance: {performance}""",
         parse_mode='Markdown'
     )
 
-# ✅ Button Handler
 def button_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     query.answer()
@@ -116,8 +110,19 @@ def button_handler(update: Update, context: CallbackContext):
     elif query.data == 'custom_signal':
         query.edit_message_text(text=generate_signal(), parse_mode='Markdown')
     elif query.data == 'stats_daily':
-        send_stats(update, context, period='daily')  # ✅ Yeh missing tha
+        send_stats(update, context, period='daily')
     elif query.data == 'stats_monthly':
         send_stats(update, context, period='monthly')
     elif query.data == 'strategy_10s':
         query.edit_message_text("⚡ Coming Soon: Advanced 10-second Strategy Signals!", parse_mode='Markdown')
+
+def main():
+    updater = Updater(TOKEN, use_context=True)
+    dp = updater.dispatcher
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CallbackQueryHandler(button_handler))
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == "__main__":
+    main()
