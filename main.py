@@ -1,6 +1,6 @@
 import logging, random, threading, datetime, pytz
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, MenuButtonDefault
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
 from utils.pairs import all_pairs
 from utils.ai_learning import get_best_pairs
@@ -8,8 +8,8 @@ from analysis.analysis import analyze_pair
 from reports.report_generator import generate_performance_chart
 from utils.result_handler import report_trade_result
 
-TOKEN = '7413469925:AAHd7Hi2g3609KoT15MSdrJSeqF1-YlCC54'
-CHAT_ID = 6065493589
+TOKEN = 'YOUR_BOT_TOKEN'
+CHAT_ID = YOUR_CHAT_ID
 
 logging.basicConfig(level=logging.INFO)
 auto_signal_job = None
@@ -21,24 +21,26 @@ def get_future_entry_time(mins_ahead=1):
     return next_minute.strftime("%H:%M:%S")
 
 def start(update: Update, context: CallbackContext):
-    # ✅ FORCE REMOVE Telegram menu buttons (📊 Stats, 🎯 New Signal)
-    context.bot.set_chat_menu_button(chat_id=update.effective_chat.id, menu_button=MenuButtonDefault())
+    reply_keyboard = [['📊 Daily Stats', '📅 Monthly Stats'], ['📌 Custom Signal', '⚡ 10s Strategy Signal'], ['🚀 Start Auto Signals', '🛑 Stop Auto Signals']]
+    markup = ReplyKeyboardMarkup(reply_keyboard, resize_keyboard=True)
 
-    update.message.reply_text("♻️ Resetting Keyboard...", reply_markup=ReplyKeyboardRemove())
-
-    custom_keyboard = [
-        ['📌 Custom Signal', '📊 Daily Stats'],
-        ['📅 Monthly Stats', '📥 Export CSV'],
-        ['🚀 Start Auto Signals', '🛑 Stop Auto Signals'],
-        ['⚡ 10s Strategy Signal', '📈 View All Signals'],
-        ['⛔ Clear Results']
+    buttons = [
+        [InlineKeyboardButton("📊 Daily Stats", callback_data='stats_daily')],
+        [InlineKeyboardButton("📅 Monthly Stats", callback_data='stats_monthly')],
+        [InlineKeyboardButton("📌 Custom Signal", callback_data='custom_signal')],
+        [InlineKeyboardButton("⚡ 10s Strategy Signal", callback_data='strategy_10s')],
+        [InlineKeyboardButton("🚀 Start Auto Signals", callback_data='start_auto')],
+        [InlineKeyboardButton("🛑 Stop Auto Signals", callback_data='stop_auto')],
     ]
-    reply_markup = ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True)
 
     update.message.reply_text(
-        "👋 *Welcome to Quotex Advanced Bot!*\n\nUse the keyboard below 👇 to navigate.",
+        "👋 Welcome to *Quotex Advanced Bot*!\n\n*Choose an option below:*",
         parse_mode='Markdown',
-        reply_markup=reply_markup
+        reply_markup=markup
+    )
+    update.message.reply_text(
+        "👇 Quick Menu:",
+        reply_markup=InlineKeyboardMarkup(buttons)
     )
 
 def generate_signal():
@@ -49,6 +51,7 @@ def generate_signal():
             break
 
     entry_time = get_future_entry_time(1)
+
     return f"""👑 *Upcoming Quotex Signal* 👑
 
 📌 *Asset:* {result['pair']}
@@ -70,6 +73,7 @@ def send_auto_signal(context: CallbackContext):
     signal_text = generate_signal()
     context.bot.send_message(chat_id=CHAT_ID, text=signal_text, parse_mode='Markdown')
 
+    # Extract for result reporting
     lines = signal_text.splitlines()
     asset_line = next((line for line in lines if "*Asset:*" in line), "")
     direction_line = next((line for line in lines if "*Direction:*" in line), "")
@@ -81,22 +85,26 @@ def send_auto_signal(context: CallbackContext):
 
 def start_auto(update: Update, context: CallbackContext):
     global auto_signal_job
+    query = update.callback_query
+    query.answer()
     if auto_signal_job:
-        update.message.reply_text("⚙️ Auto signals are already running!")
+        query.edit_message_text("⚙️ Auto signals are already running!")
         return
 
     send_auto_signal(context)
     auto_signal_job = context.job_queue.run_repeating(send_auto_signal, interval=60, first=60)
-    update.message.reply_text("✅ Auto signals started! First signal sent, next every 1 minute.")
+    query.edit_message_text("✅ Auto signals started! First signal sent, next every 1 minute.")
 
 def stop_auto(update: Update, context: CallbackContext):
     global auto_signal_job
+    query = update.callback_query
+    query.answer()
     if auto_signal_job:
         auto_signal_job.schedule_removal()
         auto_signal_job = None
-        update.message.reply_text("🛑 Auto signals stopped!")
+        query.edit_message_text("🛑 Auto signals stopped!")
     else:
-        update.message.reply_text("⚠️ No auto signals are currently running.")
+        query.edit_message_text("⚠️ No auto signals are currently running.")
 
 def send_stats(update: Update, context: CallbackContext, period='daily'):
     wins = random.randint(20, 40)
@@ -116,35 +124,27 @@ Performance: {performance}""",
         parse_mode='Markdown'
     )
 
-def text_handler(update: Update, context: CallbackContext):
-    text = update.message.text
-    if text == '📌 Custom Signal':
-        update.message.reply_text(generate_signal(), parse_mode='Markdown')
-    elif text == '📊 Daily Stats':
-        send_stats(update, context, period='daily')
-    elif text == '📅 Monthly Stats':
-        send_stats(update, context, period='monthly')
-    elif text == '🚀 Start Auto Signals':
+def button_handler(update: Update, context: CallbackContext):
+    query = update.callback_query
+    data = query.data
+    if data == 'start_auto':
         start_auto(update, context)
-    elif text == '🛑 Stop Auto Signals':
+    elif data == 'stop_auto':
         stop_auto(update, context)
-    elif text == '⚡ 10s Strategy Signal':
-        update.message.reply_text("⚡ Coming Soon: Advanced 10-second Strategy Signals!", parse_mode='Markdown')
-    elif text == '⛔ Clear Results':
-        update.message.reply_text("🧹 All past signal results cleared. (Coming soon)")
-    elif text == '📈 View All Signals':
-        update.message.reply_text("📈 Signal logs are under development.")
-    elif text == '📥 Export CSV':
-        update.message.reply_text("📤 CSV export feature coming soon.")
-    else:
-        update.message.reply_text("❗ Unknown Command. Please use the provided keyboard buttons.")
+    elif data == 'custom_signal':
+        query.edit_message_text(text=generate_signal(), parse_mode='Markdown')
+    elif data == 'stats_daily':
+        send_stats(update, context, period='daily')
+    elif data == 'stats_monthly':
+        send_stats(update, context, period='monthly')
+    elif data == 'strategy_10s':
+        query.edit_message_text("⚡ Coming Soon: Advanced 10-second Strategy Signals!", parse_mode='Markdown')
 
 def main():
     updater = Updater(TOKEN, use_context=True)
     dp = updater.dispatcher
-
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, text_handler))
+    dp.add_handler(CallbackQueryHandler(button_handler))
     updater.start_polling()
     updater.idle()
 
