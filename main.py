@@ -1,6 +1,6 @@
 import logging, random, threading, time, datetime, pytz
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters, CallbackContext
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
 from utils.pairs import all_pairs
 from utils.ai_learning import get_best_pairs
@@ -20,17 +20,15 @@ def get_future_entry_time(mins_ahead=1):
     next_minute = (now + datetime.timedelta(minutes=mins_ahead)).replace(second=0, microsecond=0)
     return next_minute.strftime("%H:%M:%S")
 
-# ✅ /start → Permanent Telegram Keyboard
 def start(update: Update, context: CallbackContext):
-    # Reset any previous keyboards
     update.message.reply_text("♻️ Resetting Keyboard...", reply_markup=ReplyKeyboardRemove())
 
-    # Telegram Keyboard Layout
     custom_keyboard = [
         ['📌 Custom Signal', '📊 Daily Stats'],
-        ['📅 Monthly Stats'],
+        ['📅 Monthly Stats', '📥 Export CSV'],
         ['🚀 Start Auto Signals', '🛑 Stop Auto Signals'],
-        ['⚡ 10s Strategy Signal']
+        ['⚡ 10s Strategy Signal', '📈 View All Signals'],
+        ['⛔ Clear Results']
     ]
     reply_markup = ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True)
 
@@ -41,7 +39,6 @@ def start(update: Update, context: CallbackContext):
     )
 
 def generate_signal():
-    # High Accuracy, Non-Sideways Trade
     while True:
         pair = random.choice(get_best_pairs(all_pairs))
         result = analyze_pair(pair, None)
@@ -49,7 +46,6 @@ def generate_signal():
             break
 
     entry_time = get_future_entry_time(1)
-
     return f"""👑 *Upcoming Quotex Signal* 👑
 
 📌 *Asset:* {result['pair']}
@@ -117,9 +113,9 @@ Performance: {performance}""",
         parse_mode='Markdown'
     )
 
-# ✅ Telegram Keyboard Button Click Handler
 def text_handler(update: Update, context: CallbackContext):
     text = update.message.text
+
     if text == '📌 Custom Signal':
         update.message.reply_text(generate_signal(), parse_mode='Markdown')
     elif text == '📊 Daily Stats':
@@ -132,6 +128,12 @@ def text_handler(update: Update, context: CallbackContext):
         stop_auto(update, context)
     elif text == '⚡ 10s Strategy Signal':
         update.message.reply_text("⚡ Coming Soon: Advanced 10-second Strategy Signals!", parse_mode='Markdown')
+    elif text == '📥 Export CSV':
+        update.message.reply_text("📥 Exporting CSV... (Coming soon)", parse_mode='Markdown')
+    elif text == '📈 View All Signals':
+        update.message.reply_text("📈 All signals will be listed here... (Coming soon)", parse_mode='Markdown')
+    elif text == '⛔ Clear Results':
+        update.message.reply_text("🗑 Trade results cleared! (Demo)", parse_mode='Markdown')
     else:
         update.message.reply_text("❗ Unknown Command. Please use the provided keyboard buttons.")
 
