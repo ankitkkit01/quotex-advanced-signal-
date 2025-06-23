@@ -1,7 +1,7 @@
 from quotexapi.client import Quotex
 
-EMAIL = "akhimanshya@gmail.com"       # Quotex login email
-PASSWORD = "ankit7492" # Quotex login password
+EMAIL = "arhimanshya@gmail.com"       # Quotex login email
+PASSWORD = "12345678an" # Quotex login password
 
 def get_client():
     client = Quotex(EMAIL, PASSWORD)
