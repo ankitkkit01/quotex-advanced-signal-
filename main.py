@@ -1,7 +1,7 @@
 import logging, random, threading, datetime, pytz
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
-
+from utils.quotex_api_client import get_client, get_payout
 from utils.pairs import all_pairs
 from utils.ai_learning import get_best_pairs
 from analysis.analysis import analyze_pair
