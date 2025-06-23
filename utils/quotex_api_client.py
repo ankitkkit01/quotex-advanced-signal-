@@ -1,43 +1,18 @@
-from quotexapi.client import Quotex
-import logging
-import time
-
-logging.basicConfig(level=logging.INFO)
+from quotexapi.core import Quotex
 
 EMAIL = "arhimanshya@gmail.com"
 PASSWORD = "12345678an"
 
 def get_client():
-    client = Quotex(EMAIL, PASSWORD)
-    client.connect()
-    client.login()
-
-    if client.check_connect():
-        logging.info("✅ Connected to Quotex API")
-        return client
+    qx = Quotex(EMAIL, PASSWORD)
+    qx.connect()
+    qx.login()
+    if qx.check_connect():
+        print("✅ Connected to Quotex successfully!")
+        return qx
     else:
-        raise Exception("❌ Failed to connect Quotex API")
+        raise Exception("❌ Failed to connect to Quotex.")
 
-def get_candles(client, asset, timeframe="1m", count=50):
-    """
-    Fetch recent candle data for the given asset.
-    Returns list of dict: [{'open': ..., 'close': ..., 'high': ..., 'low': ..., 'volume': ..., 'timestamp': ...}]
-    """
-    candles = []
-    client.subscribe_candles(asset, timeframe)
-
-    time.sleep(2)  # Wait to receive data
-    raw_candles = client.get_candles(asset, timeframe)
-    client.unsubscribe_candles(asset, timeframe)
-
-    for candle in raw_candles[-count:]:
-        candles.append({
-            'open': candle['open'],
-            'close': candle['close'],
-            'high': candle['max'],
-            'low': candle['min'],
-            'volume': candle.get('volume', 0),
-            'timestamp': candle['from']
-        })
-
-    return candles
+def get_payout(client, asset):
+    # Currently static payout → Replace with real logic later
+    return 95
