@@ -4,3 +4,4 @@ matplotlib
 simplejson
 websocket-client
 selenium
+webdriver-manager
