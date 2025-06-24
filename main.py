@@ -7,7 +7,7 @@ from utils.ai_learning import get_best_pairs
 from analysis.analysis import analyze_pair
 from reports.report_generator import generate_performance_chart
 from utils.result_handler import report_trade_result
-from utils.browser_automation import start_browser_login  # ✅ Selenium Login
+from utils.browser_automation import start_browser_login  # ✅ Selenium Automation Login
 
 TOKEN = '7413469925:AAHd7Hi2g3609KoT15MSdrJSeqF1-YlCC54'
 CHAT_ID = 6065493589
@@ -24,17 +24,17 @@ def get_future_entry_time(mins_ahead=1):
     return next_minute.strftime("%H:%M:%S")
 
 def start(update: Update, context: CallbackContext):
-    text = (
-        "👋 *Welcome to Quotex Advanced Bot!*\n\n"
-        "*Commands:*\n"
-        "`/start_auto` - Start Auto Signals\n"
-        "`/stop_auto` - Stop Auto Signals\n"
-        "`/custom_signal` - Generate Custom Signal\n"
-        "`/stats_daily` - Daily Performance Stats\n"
-        "`/stats_monthly` - Monthly Performance Stats\n"
-        "`/login_browser` - Login Quotex using Browser (Selenium)"
+    update.message.reply_text(
+        "👋 Welcome to *Quotex Advanced Bot*!\n\n"
+        "Commands:\n"
+        "/start_auto - Start Auto Signals\n"
+        "/stop_auto - Stop Auto Signals\n"
+        "/custom_signal - Generate Custom Signal\n"
+        "/stats_daily - Daily Stats\n"
+        "/stats_monthly - Monthly Stats\n"
+        "/login_browser - Login Quotex using Browser (Selenium)",
+        parse_mode='Markdown'
     )
-    update.message.reply_text(text, parse_mode='Markdown')
 
 def generate_signal():
     while True:
@@ -57,7 +57,7 @@ def generate_signal():
 
 📝 *Strategy Logic:* {result['logic']}
 
-🇮🇳 _All times are in IST (Asia/Kolkata)_
+🇮🇳 _Times in IST (Asia/Kolkata)_
 💸 *Follow Proper Money Management*
 ⏳ _Always Select 1 Minute Time Frame._
 """
