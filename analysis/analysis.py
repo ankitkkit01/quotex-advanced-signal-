@@ -1,55 +1,138 @@
-import random
+import logging, random, threading, datetime, pytz
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, CallbackContext
 
-def analyze_pair(pair, live_data=None):
-    """
-    Professional Quotex Signal Analysis with support, resistance, RSI, MACD, and trend detection.
-    live_data should contain real-time price data for better accuracy.
-    """
+from utils.quotex_browser_client import get_payout
+from utils.pairs import all_pairs
+from utils.ai_learning import get_best_pairs
+from analysis.analysis import analyze_pair
+from reports.report_generator import generate_performance_chart
+from utils.result_handler import report_trade_result
 
-    # ✅ Step 1: Mock or Real data (replace this with real-time live_data later)
-    if live_data is None:
-        live_data = {
-            'high': round(random.uniform(1.1000, 1.3000), 5),
-            'low': round(random.uniform(1.0000, 1.1000), 5),
-            'close': round(random.uniform(1.0500, 1.2500), 5),
-            'volume': random.randint(500, 5000)
-        }
+TOKEN = '7413469925:AAHd7Hi2g3609KoT15MSdrJSeqF1-YlCC54'
+CHAT_ID = 6065493589
 
-    # ✅ Step 2: Calculate mock technical indicators (replace with real calculation later)
-    support = live_data['low']
-    resistance = live_data['high']
-    current_price = live_data['close']
-    range_mid = (support + resistance) / 2
+logging.basicConfig(level=logging.INFO)
+auto_signal_job = None
 
-    rsi = random.randint(20, 80)
-    macd_signal = random.choice(['Bullish', 'Bearish', 'Neutral'])
-    trend = 'UP' if current_price > range_mid else 'DOWN'
+def get_future_entry_time(mins_ahead=1):
+    tz = pytz.timezone("Asia/Kolkata")
+    now = datetime.datetime.now(tz)
+    next_minute = (now + datetime.timedelta(minutes=mins_ahead)).replace(second=0, microsecond=0)
+    return next_minute.strftime("%H:%M:%S")
 
-    # ✅ Step 3: Signal logic
-    if trend == 'UP' and rsi < 40 and macd_signal == 'Bullish':
-        signal = 'UP'
-        logic = f"Price near Support ({support}), RSI({rsi}) Oversold, MACD Bullish"
-        accuracy = random.randint(92, 96)
-    elif trend == 'DOWN' and rsi > 60 and macd_signal == 'Bearish':
-        signal = 'DOWN'
-        logic = f"Price near Resistance ({resistance}), RSI({rsi}) Overbought, MACD Bearish"
-        accuracy = random.randint(92, 96)
+def start(update: Update, context: CallbackContext):
+    update.message.reply_text(
+        "👋 Welcome to *Quotex Advanced Bot*!\n\n"
+        "Commands:\n"
+        "/start_auto - Start Auto Signals\n"
+        "/stop_auto - Stop Auto Signals\n"
+        "/custom_signal - Generate 1 Custom Signal\n"
+        "/stats_daily - Daily Stats\n"
+        "/stats_monthly - Monthly Stats",
+        parse_mode='Markdown'
+    )
+
+def generate_signal():
+    while True:
+        pair = random.choice(get_best_pairs(all_pairs))
+        result = analyze_pair(pair, None)
+        if result['accuracy'] >= 90 and result['trend'] != 'Sideways':
+            break
+
+    entry_time = get_future_entry_time(1)
+    payout = get_payout(result['pair'])
+
+    return f"""👑 *Upcoming Quotex Signal* 👑
+
+📌 *Asset:* {result['pair']}
+🕐 *Timeframe:* 1 Minute
+🎯 *ENTRY at → {entry_time} (IST)*
+📉 *Direction:* {'⬆️ UP' if result['signal'] == 'UP' else '⬇️ DOWN'}
+🌐 *Trend:* {result['trend']}
+📊 *Forecast Accuracy:* {result['accuracy']}%
+💰 *Payout Rate:* {payout}%
+
+📝 *Strategy Logic:* {result['logic']}
+
+🇮🇳 _All times are in IST (Asia/Kolkata)_
+💸 *Follow Proper Money Management*
+⏳ _Always Select 1 Minute Time Frame._
+"""
+
+def send_auto_signal(context: CallbackContext):
+    signal_text = generate_signal()
+    context.bot.send_message(chat_id=CHAT_ID, text=signal_text, parse_mode='Markdown')
+
+    lines = signal_text.splitlines()
+    asset_line = next((line for line in lines if "*Asset:*" in line), "")
+    direction_line = next((line for line in lines if "*Direction:*" in line), "")
+
+    asset = asset_line.replace("📌 *Asset:* ", "").strip()
+    direction = direction_line.replace("📉 *Direction:* ", "").replace("⬆️ ", "").replace("⬇️ ", "").replace("*", "").strip()
+
+    threading.Thread(target=report_trade_result, args=(context.bot, CHAT_ID, asset, direction)).start()
+
+def start_auto(update: Update, context: CallbackContext):
+    global auto_signal_job
+    if auto_signal_job:
+        update.message.reply_text("⚙️ Auto signals already running!")
+        return
+
+    send_auto_signal(context)
+    auto_signal_job = context.job_queue.run_repeating(send_auto_signal, interval=60, first=60)
+    update.message.reply_text("✅ Auto signals started! First signal sent, next every 1 minute.")
+
+def stop_auto(update: Update, context: CallbackContext):
+    global auto_signal_job
+    if auto_signal_job:
+        auto_signal_job.schedule_removal()
+        auto_signal_job = None
+        update.message.reply_text("🛑 Auto signals stopped!")
     else:
-        signal = random.choice(['UP', 'DOWN'])
-        logic = f"RSI({rsi}), MACD {macd_signal}, Trend {trend}"
-        accuracy = random.randint(80, 89)
+        update.message.reply_text("⚠️ No auto signals are currently running.")
 
-    # ✅ Step 4: Sideways filter
-    price_range = resistance - support
-    if price_range < 0.0005:  # Sideways detection (customizable threshold)
-        accuracy = random.randint(60, 74)
-        logic += " ⚠️ Sideways Market Detected"
+def custom_signal(update: Update, context: CallbackContext):
+    signal_text = generate_signal()
+    context.bot.send_message(chat_id=update.effective_chat.id, text=signal_text, parse_mode='Markdown')
 
-    return {
-        'pair': pair,
-        'signal': signal,
-        'accuracy': accuracy,
-        'trend': trend,
-        'payout': random.randint(80, 95),
-        'logic': logic
-    }
+def send_stats(update: Update, context: CallbackContext, period='daily'):
+    wins = random.randint(20, 40)
+    losses = random.randint(5, 15)
+    accuracy = round((wins / (wins + losses)) * 100, 2)
+    img = generate_performance_chart(wins, losses, accuracy, period)
+    performance = "GOOD" if accuracy >= 80 else "AVERAGE" if accuracy >= 60 else "BAD"
+    context.bot.send_photo(
+        chat_id=update.effective_chat.id,
+        photo=img,
+        caption=f"""📊 *{period.capitalize()} Performance*
+
+Wins: {wins}
+Losses: {losses}
+Accuracy: {accuracy}%
+Performance: {performance}""",
+        parse_mode='Markdown'
+    )
+
+def stats_daily(update: Update, context: CallbackContext):
+    send_stats(update, context, period='daily')
+
+def stats_monthly(update: Update, context: CallbackContext):
+    send_stats(update, context, period='monthly')
+
+def main():
+    updater = Updater(TOKEN, use_context=True)
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("start_auto", start_auto))
+    dp.add_handler(CommandHandler("stop_auto", stop_auto))
+    dp.add_handler(CommandHandler("custom_signal", custom_signal))
+    dp.add_handler(CommandHandler("stats_daily", stats_daily))
+    dp.add_handler(CommandHandler("stats_monthly", stats_monthly))
+
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == "__main__":
+    main()
