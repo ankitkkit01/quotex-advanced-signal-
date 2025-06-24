@@ -18,3 +18,11 @@ def get_live_candle_data(pair, limit=50):
         }
         candles.append(candle)
     return candles
+
+
+def start_browser_login(email, password):
+    """
+    Dummy placeholder for Selenium browser login.
+    Replace with actual Selenium login code if required.
+    """
+    print(f"Logging into Quotex with {email} / {password} (Dummy Function)")
