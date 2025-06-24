@@ -5,3 +5,6 @@ simplejson
 websocket-client
 selenium
 webdriver-manager
+pandas
+ta
+numpy
