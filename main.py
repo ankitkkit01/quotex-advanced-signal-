@@ -1,21 +1,21 @@
 import logging, random, threading, datetime, pytz
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
-from utils.quotex_api_client import get_client, get_payout
+
 from utils.pairs import all_pairs
 from utils.ai_learning import get_best_pairs
 from analysis.analysis import analyze_pair
 from reports.report_generator import generate_performance_chart
 from utils.result_handler import report_trade_result
+from utils.browser_automation import start_browser_login  # ✅ Added Selenium login
 
 TOKEN = '7413469925:AAHd7Hi2g3609KoT15MSdrJSeqF1-YlCC54'
 CHAT_ID = 6065493589
+EMAIL = "arhimanshya@gmail.com"  # ✅ YOUR EMAIL
+PASSWORD = "12345678an"          # ✅ YOUR PASSWORD
 
 logging.basicConfig(level=logging.INFO)
 auto_signal_job = None
-
-# ✅ Initialize Quotex Client
-client = get_client()
 
 def get_future_entry_time(mins_ahead=1):
     tz = pytz.timezone("Asia/Kolkata")
@@ -26,12 +26,13 @@ def get_future_entry_time(mins_ahead=1):
 def start(update: Update, context: CallbackContext):
     update.message.reply_text(
         "👋 Welcome to *Quotex Advanced Bot*!\n\n"
-        "Use these commands:\n"
+        "Commands:\n"
         "/start_auto - Start Auto Signals\n"
         "/stop_auto - Stop Auto Signals\n"
         "/custom_signal - Generate Custom Signal\n"
         "/stats_daily - Daily Performance Stats\n"
-        "/stats_monthly - Monthly Performance Stats",
+        "/stats_monthly - Monthly Performance Stats\n"
+        "/login_browser - Login Quotex using Browser (Selenium)",  # ✅ New Command
         parse_mode='Markdown'
     )
 
@@ -43,7 +44,6 @@ def generate_signal():
             break
 
     entry_time = get_future_entry_time(1)
-    payout = get_payout(result['pair'])  # Dynamic payout or static 95%
 
     return f"""👑 *Upcoming Quotex Signal* 👑
 
@@ -53,11 +53,11 @@ def generate_signal():
 📉 *Direction:* {'⬆️ UP' if result['signal'] == 'UP' else '⬇️ DOWN'}
 🌐 *Trend:* {result['trend']}
 📊 *Forecast Accuracy:* {result['accuracy']}%
-💰 *Payout Rate:* {payout}%
+💰 *Payout Rate:* {result['payout']}%
 
 📝 *Strategy Logic:* {result['logic']}
 
-🇮🇳 _All times are in IST (Asia/Kolkata)_
+🇮🇳 _Times in IST (Asia/Kolkata)_
 💸 *Follow Proper Money Management*
 ⏳ _Always Select 1 Minute Time Frame._
 """
@@ -66,6 +66,7 @@ def send_auto_signal(context: CallbackContext):
     signal_text = generate_signal()
     context.bot.send_message(chat_id=CHAT_ID, text=signal_text, parse_mode='Markdown')
 
+    # Trade Result Reporting
     lines = signal_text.splitlines()
     asset_line = next((line for line in lines if "*Asset:*" in line), "")
     direction_line = next((line for line in lines if "*Direction:*" in line), "")
@@ -122,6 +123,15 @@ def stats_daily(update: Update, context: CallbackContext):
 def stats_monthly(update: Update, context: CallbackContext):
     send_stats(update, context, period='monthly')
 
+# ✅ NEW FUNCTION → Login Quotex with Selenium
+def login_browser(update: Update, context: CallbackContext):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="⚙️ Logging into Quotex using Browser...")
+    try:
+        start_browser_login(EMAIL, PASSWORD)
+        context.bot.send_message(chat_id=update.effective_chat.id, text="✅ Browser login attempted.")
+    except Exception as e:
+        context.bot.send_message(chat_id=update.effective_chat.id, text=f"❌ Browser login failed: {e}")
+
 def main():
     updater = Updater(TOKEN, use_context=True)
     dp = updater.dispatcher
@@ -132,6 +142,7 @@ def main():
     dp.add_handler(CommandHandler("custom_signal", custom_signal))
     dp.add_handler(CommandHandler("stats_daily", stats_daily))
     dp.add_handler(CommandHandler("stats_monthly", stats_monthly))
+    dp.add_handler(CommandHandler("login_browser", login_browser))  # ✅ Added Command
 
     updater.start_polling()
     updater.idle()
