@@ -3,3 +3,4 @@ pytz
 matplotlib
 simplejson
 websocket-client
+selenium
