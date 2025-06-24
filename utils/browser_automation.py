@@ -1,41 +1,20 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-import time
+import random
 
-def start_browser_login(email, password):
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-    
-    try:
-        driver.get("https://quotex.com/en/sign-in")
-        time.sleep(3)
-
-        # Fill Email
-        email_input = driver.find_element(By.NAME, "email")
-        email_input.clear()
-        email_input.send_keys(email)
-
-        # Fill Password
-        password_input = driver.find_element(By.NAME, "password")
-        password_input.clear()
-        password_input.send_keys(password)
-
-        # Click Login
-        login_button = driver.find_element(By.XPATH, '//button[contains(@class, "button")]')
-        login_button.click()
-
-        time.sleep(5)
-        print("✅ Login Attempted, URL:", driver.current_url)
-
-    except Exception as e:
-        print(f"❌ Error during login: {e}")
-
-    finally:
-        driver.quit()
+def get_live_candle_data(pair, limit=50):
+    """
+    Dummy live candle data for testing.
+    Replace with Selenium scraping or real API integration later.
+    """
+    candles = []
+    price = random.uniform(1.0, 2.0)
+    for _ in range(limit):
+        candle = {
+            'open': round(price + random.uniform(-0.05, 0.05), 5),
+            'close': round(price + random.uniform(-0.05, 0.05), 5),
+            'high': round(price + random.uniform(0, 0.1), 5),
+            'low': round(price - random.uniform(0, 0.1), 5),
+            'volume': random.randint(100, 1000),
+            'timestamp': random.randint(1600000000, 1700000000),
+        }
+        candles.append(candle)
+    return candles
