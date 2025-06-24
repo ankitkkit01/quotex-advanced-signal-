@@ -7,12 +7,13 @@ from utils.ai_learning import get_best_pairs
 from analysis.analysis import analyze_pair
 from reports.report_generator import generate_performance_chart
 from utils.result_handler import report_trade_result
-from utils.browser_automation import start_browser_login  # ✅ Added Selenium login
+from utils.browser_automation import start_browser_login  # ✅ Selenium login
 
+# CONFIG
 TOKEN = '7413469925:AAHd7Hi2g3609KoT15MSdrJSeqF1-YlCC54'
 CHAT_ID = 6065493589
-EMAIL = "arhimanshya@gmail.com"  # ✅ YOUR EMAIL
-PASSWORD = "12345678an"          # ✅ YOUR PASSWORD
+EMAIL = "arhimanshya@gmail.com"
+PASSWORD = "12345678an"
 
 logging.basicConfig(level=logging.INFO)
 auto_signal_job = None
@@ -30,9 +31,9 @@ def start(update: Update, context: CallbackContext):
         "/start_auto - Start Auto Signals\n"
         "/stop_auto - Stop Auto Signals\n"
         "/custom_signal - Generate Custom Signal\n"
-        "/stats_daily - Daily Performance Stats\n"
-        "/stats_monthly - Monthly Performance Stats\n"
-        "/login_browser - Login Quotex using Browser (Selenium)",  # ✅ New Command
+        "/stats_daily - Daily Stats\n"
+        "/stats_monthly - Monthly Stats\n"
+        "/login_browser - Login Quotex Browser (Selenium)",
         parse_mode='Markdown'
     )
 
@@ -57,43 +58,37 @@ def generate_signal():
 
 📝 *Strategy Logic:* {result['logic']}
 
-🇮🇳 _Times in IST (Asia/Kolkata)_
-💸 *Follow Proper Money Management*
-⏳ _Always Select 1 Minute Time Frame._
+🇮🇳 _IST Time | Proper Money Management | Use 1m timeframe_
 """
 
 def send_auto_signal(context: CallbackContext):
     signal_text = generate_signal()
     context.bot.send_message(chat_id=CHAT_ID, text=signal_text, parse_mode='Markdown')
 
-    # Trade Result Reporting
     lines = signal_text.splitlines()
-    asset_line = next((line for line in lines if "*Asset:*" in line), "")
-    direction_line = next((line for line in lines if "*Direction:*" in line), "")
-
-    asset = asset_line.replace("📌 *Asset:* ", "").strip()
-    direction = direction_line.replace("📉 *Direction:* ", "").replace("⬆️ ", "").replace("⬇️ ", "").replace("*", "").strip()
+    asset = next((line for line in lines if "*Asset:*" in line), "").replace("📌 *Asset:* ", "").strip()
+    direction = next((line for line in lines if "*Direction:*" in line), "").replace("📉 *Direction:* ", "").replace("⬆️ ", "").replace("⬇️ ", "").replace("*", "").strip()
 
     threading.Thread(target=report_trade_result, args=(context.bot, CHAT_ID, asset, direction)).start()
 
 def start_auto(update: Update, context: CallbackContext):
     global auto_signal_job
     if auto_signal_job:
-        update.message.reply_text("⚙️ Auto signals are already running!")
+        update.message.reply_text("⚙️ Auto signals already running!")
         return
 
     send_auto_signal(context)
     auto_signal_job = context.job_queue.run_repeating(send_auto_signal, interval=60, first=60)
-    update.message.reply_text("✅ Auto signals started! First signal sent, next every 1 minute.")
+    update.message.reply_text("✅ Auto signals started.")
 
 def stop_auto(update: Update, context: CallbackContext):
     global auto_signal_job
     if auto_signal_job:
         auto_signal_job.schedule_removal()
         auto_signal_job = None
-        update.message.reply_text("🛑 Auto signals stopped!")
+        update.message.reply_text("🛑 Auto signals stopped.")
     else:
-        update.message.reply_text("⚠️ No auto signals are currently running.")
+        update.message.reply_text("⚠️ No auto signals running.")
 
 def custom_signal(update: Update, context: CallbackContext):
     signal_text = generate_signal()
@@ -105,17 +100,7 @@ def send_stats(update: Update, context: CallbackContext, period='daily'):
     accuracy = round((wins / (wins + losses)) * 100, 2)
     img = generate_performance_chart(wins, losses, accuracy, period)
     performance = "GOOD" if accuracy >= 80 else "AVERAGE" if accuracy >= 60 else "BAD"
-    context.bot.send_photo(
-        chat_id=update.effective_chat.id,
-        photo=img,
-        caption=f"""📊 *{period.capitalize()} Performance*
-
-Wins: {wins}
-Losses: {losses}
-Accuracy: {accuracy}%
-Performance: {performance}""",
-        parse_mode='Markdown'
-    )
+    context.bot.send_photo(chat_id=update.effective_chat.id, photo=img, caption=f"""📊 *{period.capitalize()} Performance*\nWins: {wins}\nLosses: {losses}\nAccuracy: {accuracy}%\nPerformance: {performance}""", parse_mode='Markdown')
 
 def stats_daily(update: Update, context: CallbackContext):
     send_stats(update, context, period='daily')
@@ -123,12 +108,11 @@ def stats_daily(update: Update, context: CallbackContext):
 def stats_monthly(update: Update, context: CallbackContext):
     send_stats(update, context, period='monthly')
 
-# ✅ NEW FUNCTION → Login Quotex with Selenium
 def login_browser(update: Update, context: CallbackContext):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="⚙️ Logging into Quotex using Browser...")
+    context.bot.send_message(chat_id=update.effective_chat.id, text="⚙️ Logging into Quotex...")
     try:
         start_browser_login(EMAIL, PASSWORD)
-        context.bot.send_message(chat_id=update.effective_chat.id, text="✅ Browser login attempted.")
+        context.bot.send_message(chat_id=update.effective_chat.id, text="✅ Browser login complete.")
     except Exception as e:
         context.bot.send_message(chat_id=update.effective_chat.id, text=f"❌ Browser login failed: {e}")
 
@@ -142,7 +126,7 @@ def main():
     dp.add_handler(CommandHandler("custom_signal", custom_signal))
     dp.add_handler(CommandHandler("stats_daily", stats_daily))
     dp.add_handler(CommandHandler("stats_monthly", stats_monthly))
-    dp.add_handler(CommandHandler("login_browser", login_browser))  # ✅ Added Command
+    dp.add_handler(CommandHandler("login_browser", login_browser))
 
     updater.start_polling()
     updater.idle()
