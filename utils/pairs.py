@@ -1,9 +1,4 @@
 all_pairs = [
-    # Forex Major & Minor (OTC)
-    "EUR/USD OTC", "GBP/USD OTC", "USD/JPY OTC", "AUD/USD OTC", "NZD/USD OTC", "USD/CHF OTC", "EUR/GBP OTC", "USD/CAD OTC",
-    "EUR/JPY OTC", "GBP/JPY OTC", "AUD/JPY OTC", "EUR/CAD OTC", "EUR/CHF OTC", "AUD/CHF OTC", "GBP/AUD OTC", "NZD/CHF OTC",
-    "NZD/CAD OTC", "AUD/NZD OTC",
-
     # Exotic Forex (OTC)
     "USD/PKR OTC", "USD/IDR OTC", "USD/INR OTC", "USD/MXN OTC", "USD/ZAR OTC", "USD/BRL OTC", "USD/TRY OTC", "USD/COP OTC",
 
