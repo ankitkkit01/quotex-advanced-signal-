@@ -25,4 +25,4 @@ def start_browser_login(email, password):
     Dummy placeholder for Selenium browser login.
     Replace with actual Selenium login code if required.
     """
-    print(f"Logging into Quotex with {email} / {password} (Dummy Function)")
+    print(f"Logging into Quotex with Email: {email} and Password: {password} (Dummy Function)")
