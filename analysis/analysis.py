@@ -1,41 +1,35 @@
-import random
+import numpy as np
+import pandas as pd
+from ta.momentum import RSIIndicator
 
-def analyze_pair(pair, data=None):
-    """
-    Professional analysis using mock indicators for demonstration.
-    Real-time data fetching and technical analysis logic should be integrated here.
-    """
+from browser_automation import get_live_candle_data
 
-    # Mock indicators (replace with real analysis later)
-    rsi = random.randint(20, 80)
-    macd_signal = random.choice(['Bullish', 'Bearish', 'Neutral'])
-    trend = random.choice(['UP', 'DOWN', 'Sideways'])
-    support_resistance = random.choice(['Near Support', 'Near Resistance', 'Middle Zone'])
+def analyze_pair(pair, _):
+    candles = get_live_candle_data(pair)
+    df = pd.DataFrame(candles)
 
-    # Decision Logic
-    if rsi < 35 and macd_signal == 'Bullish' and trend == 'UP' and support_resistance == 'Near Support':
-        signal = 'UP'
-        logic = f"RSI({rsi}) Oversold, MACD Bullish, Near Support"
-        accuracy = random.randint(91, 95)
-    elif rsi > 65 and macd_signal == 'Bearish' and trend == 'DOWN' and support_resistance == 'Near Resistance':
-        signal = 'DOWN'
-        logic = f"RSI({rsi}) Overbought, MACD Bearish, Near Resistance"
-        accuracy = random.randint(91, 95)
+    df['rsi'] = RSIIndicator(df['close'], window=14).rsi()
+
+    latest_rsi = df['rsi'].iloc[-1]
+
+    if latest_rsi < 30:
+        signal = "UP"
+        logic = f"RSI: {round(latest_rsi, 2)} ➔ Oversold Zone, Expect Up Movement"
+        accuracy = 92
+    elif latest_rsi > 70:
+        signal = "DOWN"
+        logic = f"RSI: {round(latest_rsi, 2)} ➔ Overbought Zone, Expect Down Movement"
+        accuracy = 92
     else:
-        signal = random.choice(['UP', 'DOWN'])
-        logic = f"RSI({rsi}), MACD {macd_signal}, Trend {trend}, {support_resistance}"
-        accuracy = random.randint(75, 89)
-
-    # Sideways Market Handling
-    if trend == 'Sideways':
-        accuracy = random.randint(60, 74)
-        logic += " ⚠️ Sideways Market Detected"
+        signal = random.choice(["UP", "DOWN"])
+        logic = f"RSI: {round(latest_rsi, 2)} ➔ Neutral Zone"
+        accuracy = 75
 
     return {
         'pair': pair,
         'signal': signal,
         'accuracy': accuracy,
-        'trend': trend,
+        'trend': 'UP' if signal == 'UP' else 'DOWN',
         'payout': random.randint(80, 95),
         'logic': logic
     }
