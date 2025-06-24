@@ -9,18 +9,21 @@ from analysis.analysis import analyze_pair
 from reports.report_generator import generate_performance_chart
 from utils.result_handler import report_trade_result
 
+# ✅ Telegram Bot Token and Chat ID
 TOKEN = '7413469925:AAHd7Hi2g3609KoT15MSdrJSeqF1-YlCC54'
 CHAT_ID = 6065493589
 
 logging.basicConfig(level=logging.INFO)
 auto_signal_job = None
 
+# ✅ Get next minute entry time in IST
 def get_future_entry_time(mins_ahead=1):
     tz = pytz.timezone("Asia/Kolkata")
     now = datetime.datetime.now(tz)
     next_minute = (now + datetime.timedelta(minutes=mins_ahead)).replace(second=0, microsecond=0)
     return next_minute.strftime("%H:%M:%S")
 
+# ✅ Start Command → Menu Instructions
 def start(update: Update, context: CallbackContext):
     update.message.reply_text(
         "👋 Welcome to *Quotex Advanced Bot*!\n\n"
@@ -33,6 +36,7 @@ def start(update: Update, context: CallbackContext):
         parse_mode='Markdown'
     )
 
+# ✅ Generate Signal Function
 def generate_signal():
     while True:
         pair = random.choice(get_best_pairs(all_pairs))
@@ -55,15 +59,17 @@ def generate_signal():
 
 📝 *Strategy Logic:* {result['logic']}
 
-🇮🇳 _All times are in IST (Asia/Kolkata)_
+🇮🇳 _Times are in IST (Asia/Kolkata)_
 💸 *Follow Proper Money Management*
 ⏳ _Always Select 1 Minute Time Frame._
 """
 
+# ✅ Send Signal + Start result report thread
 def send_auto_signal(context: CallbackContext):
     signal_text = generate_signal()
     context.bot.send_message(chat_id=CHAT_ID, text=signal_text, parse_mode='Markdown')
 
+    # Extract Asset & Direction for Result Reporting
     lines = signal_text.splitlines()
     asset_line = next((line for line in lines if "*Asset:*" in line), "")
     direction_line = next((line for line in lines if "*Direction:*" in line), "")
@@ -73,6 +79,7 @@ def send_auto_signal(context: CallbackContext):
 
     threading.Thread(target=report_trade_result, args=(context.bot, CHAT_ID, asset, direction)).start()
 
+# ✅ Start Auto Signals Command
 def start_auto(update: Update, context: CallbackContext):
     global auto_signal_job
     if auto_signal_job:
@@ -83,6 +90,7 @@ def start_auto(update: Update, context: CallbackContext):
     auto_signal_job = context.job_queue.run_repeating(send_auto_signal, interval=60, first=60)
     update.message.reply_text("✅ Auto signals started! First signal sent, next every 1 minute.")
 
+# ✅ Stop Auto Signals Command
 def stop_auto(update: Update, context: CallbackContext):
     global auto_signal_job
     if auto_signal_job:
@@ -90,12 +98,14 @@ def stop_auto(update: Update, context: CallbackContext):
         auto_signal_job = None
         update.message.reply_text("🛑 Auto signals stopped!")
     else:
-        update.message.reply_text("⚠️ No auto signals are currently running.")
+        update.message.reply_text("⚠️ No auto signals currently running.")
 
+# ✅ Generate 1 Custom Signal
 def custom_signal(update: Update, context: CallbackContext):
     signal_text = generate_signal()
     context.bot.send_message(chat_id=update.effective_chat.id, text=signal_text, parse_mode='Markdown')
 
+# ✅ Generate Stats (Chart)
 def send_stats(update: Update, context: CallbackContext, period='daily'):
     wins = random.randint(20, 40)
     losses = random.randint(5, 15)
@@ -114,12 +124,14 @@ Performance: {performance}""",
         parse_mode='Markdown'
     )
 
+# ✅ Stats Commands
 def stats_daily(update: Update, context: CallbackContext):
     send_stats(update, context, period='daily')
 
 def stats_monthly(update: Update, context: CallbackContext):
     send_stats(update, context, period='monthly')
 
+# ✅ Main Function
 def main():
     updater = Updater(TOKEN, use_context=True)
     dp = updater.dispatcher
